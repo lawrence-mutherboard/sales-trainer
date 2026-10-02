@@ -1,0 +1,44 @@
+# Render "Blueprint": tells Render how to build and run the app. Render reads it when you create the service from
+# this repository (New + > Blueprint), or you can type the same build and start commands by hand.
+services:
+  - type: web
+    name: mutherboard-sales-trainer
+    runtime: node
+    plan: free            # free instances go to sleep after ~15 minutes idle; the first visit afterwards is slow
+    region: frankfurt     # closest to the UK among Render's regions at the time of writing; check the options on Render
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      # Secrets and settings: Render asks you for these values. Copy them from your .env.local.
+      # NEXT_PUBLIC_* ones are fixed into the build, so set them BEFORE the first deploy and redeploy after changing them.
+      - key: SITE_URL                      # your Render address, for example https://mutherboard-sales-trainer.onrender.com
+        sync: false
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ALLOWED_EMAIL_DOMAIN
+        value: mutherboard.com
+      - key: LLM_PROVIDER
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_WORKSPACE_ID
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_TTS_PROVIDER
+        sync: false
+      - key: NEXT_PUBLIC_STT_PROVIDER
+        sync: false
+      - key: TTS_BACKEND
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
