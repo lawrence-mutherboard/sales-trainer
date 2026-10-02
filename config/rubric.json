@@ -1,0 +1,277 @@
+{
+  "_help": "Total 100 = core 30 + scenario module 60 + accuracy 10. The scorer awards a grade per criterion (full / partial / zero); the code converts that to points (partial = half, rounded down). Every grade must quote the transcript.",
+  "pass_mark_note": "Pass/fail is decided by the scenario success condition, not by a score threshold.",
+  "grade_points": {
+    "full": 1,
+    "partial": 0.5,
+    "zero": 0
+  },
+  "core": {
+    "label": "Core",
+    "criteria": [
+      {
+        "id": "core_opener",
+        "name": "Clear opener",
+        "max": 10,
+        "question": "Does the rep introduce themselves and mutherboard, state the reason for the call, and set an agenda?",
+        "full": "Names themselves and mutherboard, gives a specific reason for the call, and proposes what the conversation will cover."
+      },
+      {
+        "id": "core_listening",
+        "name": "Listening",
+        "max": 10,
+        "question": "Does the rep follow up on the prospect's answers and avoid interrupting? (The talk-ratio limit is checked by code and applied automatically. Judge follow-ups and interruptions only.)",
+        "full": "Builds on what the prospect just said, asks follow-ups, and never talks over them.",
+        "talk_ratio_max": 0.5,
+        "talk_ratio_max_by_scenario": {
+          "cold_call": 0.6,
+          "discovery": 0.55,
+          "demo": 0.6
+        },
+        "over_ratio_cap_grade": "partial"
+      },
+      {
+        "id": "core_next_steps",
+        "name": "Next steps",
+        "max": 10,
+        "question": "Does the rep agree a specific next step with a date and involve the right people?",
+        "full": "States the next step, agrees a date and time, and names who else needs to be involved."
+      }
+    ]
+  },
+  "modules": {
+    "cold_call": {
+      "label": "Cold call",
+      "framework": "Challenger",
+      "criteria": [
+        {
+          "id": "cc_permission",
+          "name": "Earns permission to continue",
+          "max": 10,
+          "question": "Within the first 30 seconds, does the rep earn permission to continue by owning the cold call or giving a reason to stay on the line, WITHOUT leaning on weak openers such as \"Did I catch you at a bad time?\" or \"How are you today?\"?",
+          "full": "Acknowledges it is an unexpected call (\"I know I am calling out of the blue...\") or opens with relevant context, asks for a short window, and the prospect agrees to keep talking. (Gong data: \"bad time\" and \"how are you\" openers convert worst; owning the call or leading with context converts best, about 11%.)"
+        },
+        {
+          "id": "cc_insight",
+          "name": "Leads with an insight",
+          "max": 15,
+          "question": "Does the rep lead with an insight that is relevant to the prospect's department, instead of a product or service pitch?",
+          "full": "Opens with a specific, relevant observation or context (for example what similar teams in their department are dealing with and what it costs) before mentioning mutherboard services. Keeps the opener and pitch short and about them."
+        },
+        {
+          "id": "cc_brushoff",
+          "name": "Handles the brush-off",
+          "max": 15,
+          "question": "When the prospect brushes them off, does the rep keep going calmly, without giving up or getting pushy?",
+          "full": "Acknowledges the brush-off, offers a small low-effort alternative or a relevant question, and stays polite."
+        },
+        {
+          "id": "cc_qualify",
+          "name": "Asks qualifying questions",
+          "max": 10,
+          "question": "Does the rep ask 2 to 3 qualifying questions about the prospect (tools, process, pain, who is involved) and use the answers?",
+          "full": "Asks two or more relevant questions and uses the answers."
+        },
+        {
+          "id": "cc_ask",
+          "name": "Direct ask for the meeting",
+          "max": 10,
+          "question": "Does the rep make a clear, direct ask for a meeting with a specific date and time?",
+          "full": "Asks directly for a meeting and proposes specific slots, rather than offering to \"catch up sometime\"."
+        }
+      ]
+    },
+    "discovery": {
+      "label": "Discovery",
+      "framework": "SPIN + MEDDIC",
+      "criteria": [
+        {
+          "id": "disc_situation",
+          "name": "Situation",
+          "max": 5,
+          "question": "Does the rep uncover the prospect's current tools and process?",
+          "full": "Finds out which tools they use today and how the work flows through them."
+        },
+        {
+          "id": "disc_problem",
+          "name": "Problem",
+          "max": 10,
+          "question": "Does the rep uncover the real pain behind the surface complaint?",
+          "full": "Keeps asking \"why\" or \"what happens then\" about the prospect's own problems and goals (not product features) until the underlying business problem is stated."
+        },
+        {
+          "id": "disc_implication",
+          "name": "Implication",
+          "max": 10,
+          "question": "Does the rep quantify the cost of the problem (time, money or missed outcomes)?",
+          "full": "Gets the prospect to state a number, such as hours per week or money lost."
+        },
+        {
+          "id": "disc_need_payoff",
+          "name": "Need-payoff",
+          "max": 5,
+          "question": "Does the prospect describe the value of solving the problem in their own words?",
+          "full": "Asks a question that makes the prospect say what solving it would be worth to them."
+        },
+        {
+          "id": "disc_metrics",
+          "name": "Metrics",
+          "max": 5,
+          "question": "Does the rep agree with the prospect how success would be measured?",
+          "full": "Establishes one or two concrete success measures with the prospect."
+        },
+        {
+          "id": "disc_economic_buyer",
+          "name": "Economic buyer",
+          "max": 5,
+          "question": "Does the rep identify who signs off on the purchase?",
+          "full": "Asks who approves budget and gets a name or role."
+        },
+        {
+          "id": "disc_decision_process",
+          "name": "Decision criteria and process",
+          "max": 10,
+          "question": "Does the rep find out how they will choose, and the timeline?",
+          "full": "Uncovers the decision criteria, the steps involved (for example security or procurement) and the timeline."
+        },
+        {
+          "id": "disc_champion",
+          "name": "Champion",
+          "max": 5,
+          "question": "Does the rep identify who will push this internally?",
+          "full": "Asks who will champion the change and how engaged that person is."
+        },
+        {
+          "id": "disc_summary",
+          "name": "Summarises the pain back",
+          "max": 5,
+          "question": "Does the rep summarise the pain back to the prospect and get confirmation?",
+          "full": "Summarises the situation, problem and impact in the prospect's own words, and the prospect confirms it is right. Spreads questions through the call instead of firing a checklist (Gong: roughly 11 to 16 questions; more than that correlates with losing)."
+        }
+      ]
+    },
+    "demo": {
+      "label": "Demo",
+      "framework": "Tailored walkthrough",
+      "criteria": [
+        {
+          "id": "demo_recap",
+          "name": "Recaps the pain",
+          "max": 10,
+          "question": "Does the rep open by recapping the pain found in discovery?",
+          "full": "Restates the prospect's specific problem and goals before describing anything."
+        },
+        {
+          "id": "demo_tailored",
+          "name": "Tailored walkthrough",
+          "max": 15,
+          "question": "Does the rep tailor the walkthrough to the prospect's use case instead of giving a feature tour?",
+          "full": "Describes the setup in terms of the prospect's own process and terminology."
+        },
+        {
+          "id": "demo_roi",
+          "name": "Ties setup to metrics or ROI",
+          "max": 15,
+          "question": "Does the rep tie each part of the setup to the prospect's metrics or ROI?",
+          "full": "For each element explains how it moves a metric the prospect cares about."
+        },
+        {
+          "id": "demo_checkins",
+          "name": "Checks in",
+          "max": 10,
+          "question": "Does the rep check in with questions during the demo?",
+          "full": "Pauses regularly to check relevance and adjusts."
+        },
+        {
+          "id": "demo_accuracy",
+          "name": "Answers product questions accurately",
+          "max": 10,
+          "question": "Does the rep answer product questions accurately (without guessing or over-promising)?",
+          "full": "Answers correctly, or says honestly that they will confirm."
+        }
+      ]
+    },
+    "objection_handling": {
+      "label": "Objection handling",
+      "framework": "Acknowledge - Ask - Answer - Confirm",
+      "criteria": [
+        {
+          "id": "obj_acknowledge",
+          "name": "Acknowledges the concern",
+          "max": 10,
+          "question": "Across the objections, does the rep acknowledge the concern without getting defensive?",
+          "full": "Validates the concern before responding."
+        },
+        {
+          "id": "obj_ask",
+          "name": "Asks to understand",
+          "max": 15,
+          "question": "Across the objections, does the rep ask a question to understand the real concern?",
+          "full": "Asks what is behind the objection before answering."
+        },
+        {
+          "id": "obj_respond",
+          "name": "Responds with evidence",
+          "max": 20,
+          "question": "Across the objections, does the rep respond with evidence, an example or a reframe?",
+          "full": "Gives a concrete example, data or reframe that addresses the specific concern."
+        },
+        {
+          "id": "obj_confirm",
+          "name": "Confirms resolution",
+          "max": 15,
+          "question": "Across the objections, does the rep confirm the objection is resolved before moving on?",
+          "full": "Checks 'does that address it?' and gets a yes."
+        }
+      ]
+    },
+    "pricing_negotiation": {
+      "label": "Pricing negotiation",
+      "framework": "Value-first negotiation",
+      "criteria": [
+        {
+          "id": "price_value",
+          "name": "Restates value first",
+          "max": 15,
+          "question": "Does the rep restate value and agreed outcomes before discussing price?",
+          "full": "Recaps outcomes and their worth before touching the number."
+        },
+        {
+          "id": "price_justify",
+          "name": "Justifies hours and scope",
+          "max": 10,
+          "question": "Does the rep justify the hours and scope clearly?",
+          "full": "Breaks down what the hours cover and why."
+        },
+        {
+          "id": "price_trade",
+          "name": "Trades concessions",
+          "max": 15,
+          "question": "Does the rep trade concessions (longer commitment, faster sign-off) instead of giving them away?",
+          "full": "Every concession is exchanged for something."
+        },
+        {
+          "id": "price_discount",
+          "name": "Stays within the discount rule",
+          "max": 10,
+          "question": "Does the rep stay within the discount rule in business.json?",
+          "full": "Never offers more than the allowed discount."
+        },
+        {
+          "id": "price_calm",
+          "name": "Calm under pushback",
+          "max": 10,
+          "question": "Does the rep stay calm and confident under pushback?",
+          "full": "Keeps a steady tone and doesn't cave or get defensive."
+        }
+      ]
+    }
+  },
+  "accuracy": {
+    "label": "Accuracy",
+    "max": 10,
+    "penalty_wrong_fact": 5,
+    "penalty_unoffered_service": 5,
+    "instructions": "Start from the maximum. Count each wrong monday.com or mutherboard price or fact, and each promise of a service mutherboard does not offer. Only flag clear errors. If the rep is vague or says they will check, do not penalise. Use only the business facts provided."
+  }
+}

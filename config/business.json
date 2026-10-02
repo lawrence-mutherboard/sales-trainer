@@ -1,0 +1,60 @@
+{
+  "company": {
+    "name": "mutherboard",
+    "description": "mutherboard is a monday.com partner. We help companies get real value from monday.com.",
+    "services": [
+      "Implementation services",
+      "Expert advice",
+      "Solutioning",
+      "Managed services",
+      "Scoping"
+    ],
+    "services_not_offered": [],
+    "services_note": "Treat the 'services' list as everything mutherboard sells. 'services_not_offered' is for explicit exclusions (e.g. 'Reselling monday.com licences') - fill this in once confirmed. The scorer only penalises a clear promise of something outside the services list."
+  },
+  "rate": {
+    "currency": "GBP",
+    "symbol": "£",
+    "per_hour": 160,
+    "note": "PLACEHOLDER until a full rate card exists."
+  },
+  "default_prospect_stance": "The prospect assumes they can set monday.com up themselves. The rep has to earn the case for using a partner.",
+  "value_points": [
+    "Faster time to value: a working setup in weeks, not months of trial and error.",
+    "Avoiding costly rework: poorly designed boards and automations often need rebuilding as the team grows.",
+    "Higher adoption: training and change management so the team actually uses it.",
+    "Expertise in integrations, automations and monday CRM that an internal admin rarely has.",
+    "Ongoing support through managed services, instead of one person becoming the bottleneck."
+  ],
+  "monday_pricing": {
+    "product": "monday.com Work Management",
+    "currency": "USD",
+    "unit": "per seat per month",
+    "last_verified": null,
+    "verify_note": "Check against monday.com's pricing page every quarter, then set last_verified (YYYY-MM-DD). These figures came from the original spec and have NOT been independently verified.",
+    "plans": [
+      { "name": "Free", "annual": "0", "monthly": "0", "notes": "Up to 2 seats" },
+      { "name": "Basic", "annual": "9", "monthly": "12", "notes": "3-seat minimum" },
+      { "name": "Standard", "annual": "12", "monthly": "14", "notes": "3-seat minimum" },
+      { "name": "Pro", "annual": "19", "monthly": "24", "notes": "3-seat minimum" },
+      { "name": "Enterprise", "annual": "Custom", "monthly": "Custom", "notes": "Quoted by monday.com sales" }
+    ],
+    "crm": {
+      "note": "monday CRM is a separate purchase.",
+      "plans": [
+        { "name": "Basic", "annual": "12" },
+        { "name": "Standard", "annual": "17" },
+        { "name": "Pro", "annual": "28" },
+        { "name": "Ultimate", "annual": "Quoted" }
+      ]
+    },
+    "seat_buckets": [3, 5, 10, 15],
+    "seat_bucket_note": "Seats are sold in buckets (3, 5, 10, 15 and up), so a team of 6 pays for 10."
+  },
+  "discount_rule": {
+    "max_percent": 10,
+    "alternative": "Extra hours instead of a discount.",
+    "note": "PLACEHOLDER. Anything beyond this counts as a failed negotiation."
+  },
+  "retention_days": 90
+}

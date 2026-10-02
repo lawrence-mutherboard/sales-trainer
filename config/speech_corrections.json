@@ -1,0 +1,24 @@
+{
+  "_help": "Fixes for words the speech recognition regularly mishears on sales calls. Applied to what the rep says, before the AI sees it, before it is shown, and before it is saved and scored. 'heard' is matched as whole words, ignoring capitals. Add a line whenever you spot a repeat mistake (the transcript on the call screen shows what was heard). Only add phrases that would never be said on purpose in a sales call.",
+  "corrections": [
+    { "heard": "bed time", "said": "bad time" },
+    { "heard": "bedtime", "said": "bad time" },
+    { "heard": "mother board", "said": "mutherboard" },
+    { "heard": "motherboard", "said": "mutherboard" },
+    { "heard": "mothers board", "said": "mutherboard" },
+    { "heard": "monday dot com", "said": "monday.com" },
+    { "heard": "monday com", "said": "monday.com" },
+    { "heard": "monday.com's", "said": "monday.com's" },
+    { "heard": "c r m", "said": "CRM" },
+    { "heard": "sales force", "said": "Salesforce" },
+    { "heard": "hub spot", "said": "HubSpot" },
+    { "heard": "click up", "said": "ClickUp" },
+    { "heard": "a sauna", "said": "Asana" },
+    { "heard": "cold core", "said": "cold call" },
+    { "heard": "discovery core", "said": "discovery call" },
+    { "heard": "pain points", "said": "pain points" },
+    { "heard": "on boarding", "said": "onboarding" },
+    { "heard": "pay back period", "said": "payback period" },
+    { "heard": "r o i", "said": "ROI" }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "_help": "Empty 'departments', 'company_sizes' or 'scenarios' means 'applies to all'. 'default: true' objections are always raised first. 'resolved_when' tells the prospect what counts as a good answer, so the roleplay is consistent.",
+  "objections": [
+    {
+      "id": "diy",
+      "text": "We'll just set it up ourselves; monday.com is easy.",
+      "default": true,
+      "departments": [],
+      "company_sizes": [],
+      "scenarios": [],
+      "resolved_when": "The rep gives a concrete reason a partner beats DIY (time to value, rework risk, adoption, integrations expertise) or asks what they have already tried."
+    },
+    {
+      "id": "monday_onboarding",
+      "text": "monday.com already offers onboarding and support.",
+      "default": false,
+      "departments": [],
+      "company_sizes": [],
+      "scenarios": [],
+      "resolved_when": "The rep explains how partner work differs from generic vendor onboarding (tailored to their process, ongoing managed support, change management)."
+    },
+    {
+      "id": "rate_expensive",
+      "text": "£160 an hour is expensive. How many hours will this actually take?",
+      "default": false,
+      "departments": [],
+      "company_sizes": [],
+      "scenarios": ["discovery", "demo", "objection_handling", "pricing_negotiation"],
+      "resolved_when": "The rep gives a reasoned estimate tied to scope, or proposes scoping first, and links cost to value."
+    },
+    {
+      "id": "tried_before",
+      "text": "We already tried monday.com and it didn't stick.",
+      "default": false,
+      "departments": [],
+      "company_sizes": [],
+      "scenarios": [],
+      "resolved_when": "The rep asks why it didn't stick and connects it to setup or adoption issues a partner would address."
+    },
+    {
+      "id": "bad_timing",
+      "text": "Now isn't a good time; we're mid-quarter.",
+      "default": false,
+      "departments": [],
+      "company_sizes": [],
+      "scenarios": [],
+      "resolved_when": "The rep respects the timing but makes a small, low-effort next step easy (a short call, a later date) or shows the cost of waiting."
+    },
+    {
+      "id": "send_email",
+      "text": "Send me an email and I'll look at it.",
+      "default": false,
+      "departments": [],
+      "company_sizes": [],
+      "scenarios": ["cold_call"],
+      "resolved_when": "The rep politely agrees but still secures a specific commitment (a short call, a time to follow up) instead of giving up."
+    },
+    {
+      "id": "other_partner",
+      "text": "We're also talking to another partner.",
+      "default": false,
+      "departments": [],
+      "company_sizes": [],
+      "scenarios": ["discovery", "demo", "objection_handling", "pricing_negotiation"],
+      "resolved_when": "The rep stays calm, asks what matters in the decision, and differentiates on fit rather than trashing the competitor."
+    },
+    {
+      "id": "roi",
+      "text": "What's the ROI and payback period?",
+      "default": false,
+      "departments": ["finance"],
+      "company_sizes": [],
+      "scenarios": [],
+      "resolved_when": "The rep links the cost to a figure the prospect gave (or asks for one) and offers a sensible payback reasoning without inventing guarantees."
+    },
+    {
+      "id": "crm_alternative",
+      "text": "We're looking at HubSpot or Salesforce instead.",
+      "default": false,
+      "departments": ["sales"],
+      "company_sizes": [],
+      "scenarios": [],
+      "resolved_when": "The rep asks what drives the comparison and explains where monday CRM fits (flexibility, adoption, cost) without bashing the alternatives."
+    },
+    {
+      "id": "jira_integration",
+      "text": "Will it integrate with Jira and our dev workflow?",
+      "default": false,
+      "departments": ["product"],
+      "company_sizes": [],
+      "scenarios": [],
+      "resolved_when": "The rep answers accurately about integration, and offers to scope the specific workflow rather than over-promising."
+    },
+    {
+      "id": "security_procurement",
+      "text": "Security and procurement will need months to approve this.",
+      "default": false,
+      "departments": [],
+      "company_sizes": ["enterprise"],
+      "scenarios": [],
+      "resolved_when": "The rep acknowledges the process, asks about it, and suggests a way to start (a pilot, early involvement of security) rather than dismissing it."
+    }
+  ]
+}

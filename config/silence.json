@@ -1,0 +1,13 @@
+{
+  "_help": "What the prospect does when the rep goes quiet during a voice call. The clock starts when the prospect finishes speaking (or the rep last spoke). After first_ms of silence the prospect says a 'first' line; after second_ms more it says a 'second' line; after hangup_ms more it says a 'hangup' line and ends the call. Any speech from the rep resets everything. Not used in typed calls. Set enabled to false to turn it off. Each line is picked at random. 'moods' must be keys of ai.json -> tts.moods.",
+  "enabled": true,
+  "first_ms": 4000,
+  "second_ms": 2000,
+  "hangup_ms": 2000,
+  "moods": { "first": "doubtful", "second": "impatient", "hangup": "irritated" },
+  "lines": {
+    "first": ["Hello?", "Hi, are you still there?", "Hello? Are you there?", "Hi? Can you hear me?"],
+    "second": ["Hello?", "Hello? I can't hear you.", "Hi? Hello?", "Sorry, are you still there?"],
+    "hangup": ["I can't hear anything, so I'm going to hang up. Bye.", "Right, I think we've lost each other. Bye.", "Nothing. Okay, I'll go. Bye."]
+  }
+}

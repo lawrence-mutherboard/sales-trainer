@@ -1,0 +1,56 @@
+{
+  "_help": "Benchmarks shown beside your speaking metrics in the report. 'min' and 'max' set the target range (leave one out if there is only a limit one way). Edit freely. These come from public sales research (see 'sources') and are guides, not laws. Last researched: October 2026 - re-check occasionally.",
+  "sources": [
+    { "label": "Gong Labs - analysis of 100k cold calls (talk ratio, longest monologue, call length)", "url": "https://www.gong.io/files/gong-guide-9-secret-elements-of-cold-calls.pdf" },
+    { "label": "Gong - best and worst cold call openers (300M calls)", "url": "https://www.gong.io/blog/the-best-and-worst-cold-call-openers-backed-by-data-from-300m-calls" },
+    { "label": "Gong - what top sellers do differently in discovery (talk ratio, number of questions)", "url": "https://echai.ventures/gtm/gtm-operator-principles/what-does-gong-s-call-data-actually-say-top-sellers-do-differently-in-discovery" },
+    { "label": "Gong Labs - filler words in sales (no link to win rates)", "url": "https://www.gong.io/resources/labs/filler-words-in-sales/" },
+    { "label": "Hyperbound - speaking pace benchmark (about 150 words per minute)", "url": "https://www.hyperbound.ai/blog/150-words-minute-sales-pace" }
+  ],
+  "metrics": {
+    "cold_call": {
+      "talk_share": {
+        "label": "Talk time (you)", "unit": "%", "max": 60, "target": "about 55–60% or less",
+        "note": "In Gong's data, reps in successful cold calls talk about 55% of the time. A cold call needs more rep talk than discovery, but it should still be a conversation."
+      },
+      "wpm": {
+        "label": "Speaking pace", "unit": "words/min", "min": 125, "max": 150, "target": "125–150",
+        "note": "Hyperbound's benchmark is about 150. Below ~120 can sound disengaged; above ~160 people follow less. Estimated from how long you spoke."
+      },
+      "filler_pct": {
+        "label": "Filler words", "unit": "% of your words", "max": 3, "target": "under 3%",
+        "note": "A common coaching target. Gong's own analysis of nearly 500,000 calls found no link between filler words and winning, so treat this as polish, not a priority. Speech-to-text often drops fillers, so the count is a minimum."
+      },
+      "longest_monologue_s": {
+        "label": "Longest stretch talking", "unit": "seconds", "max": 76, "target": "under about 76 s",
+        "note": "Gong: top reps keep any continuous stretch under ~76 seconds. In successful cold calls the longest stretch averaged about 53 s (vs 25 s in failed ones), because a good pitch earns attention. Just don't ramble."
+      },
+      "questions": {
+        "label": "Questions you asked", "unit": "", "min": 2, "max": 4, "target": "2–4",
+        "note": "A typical cold call is a ~30-second opener, a value statement, 2–3 qualifying questions, then a direct ask."
+      }
+    },
+    "discovery": {
+      "talk_share": {
+        "label": "Talk time (you)", "unit": "%", "max": 55, "target": "55% or less (43% is the classic ideal)",
+        "note": "The classic benchmark is 43% rep / 57% prospect. Gong's 2025 analysis of 326,000 calls found the average rep talks about 60%, with won deals at 57% and lost deals at 62%."
+      },
+      "wpm": {
+        "label": "Speaking pace", "unit": "words/min", "min": 125, "max": 150, "target": "125–150",
+        "note": "Hyperbound's benchmark is about 150. Slow down for pricing and complex points (100–120); a little faster is fine for stories. Estimated from how long you spoke."
+      },
+      "filler_pct": {
+        "label": "Filler words", "unit": "% of your words", "max": 3, "target": "under 3%",
+        "note": "A common coaching target. Gong found no link between filler words and winning, so treat this as polish. Speech-to-text often drops fillers, so the count is a minimum."
+      },
+      "longest_monologue_s": {
+        "label": "Longest stretch talking", "unit": "seconds", "max": 76, "target": "under about 76 s",
+        "note": "Gong: top reps keep any continuous stretch under ~76 seconds. In discovery, long stretches usually mean pitching instead of asking."
+      },
+      "questions": {
+        "label": "Questions you asked", "unit": "", "min": 11, "max": 16, "target": "11–16",
+        "note": "Gong's older data says 11–14; its 2025 data has won deals at about 15–16 questions and lost deals at about 20. Spread them through the call instead of firing them off as a checklist."
+      }
+    }
+  }
+}

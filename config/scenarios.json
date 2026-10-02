@@ -1,0 +1,61 @@
+{
+  "_help": "'enabled: false' scenarios are configured but greyed out in the app until their phase ships. 'module' points at a key in rubric.json.",
+  "scenarios": {
+    "cold_call": {
+      "label": "Cold call",
+      "enabled": true,
+      "module": "cold_call",
+      "time_limit_min": 5,
+      "starting_situation": "The prospect has never heard of mutherboard. You are calling out of the blue and they are in the middle of their day.",
+      "success_condition": "A meeting is booked with a specific date and time.",
+      "rep_brief": "You're calling a prospect who has never heard of mutherboard. Earn permission to continue, open with something relevant to them, and book a meeting.",
+      "prospect_opening": "The phone rings and you pick up. Your very first line is ONLY a short, casual greeting like 'Hello?' or 'Hi there?'. You have no idea who is calling, so do NOT say your name, job title or company, and do NOT ask who it is in that first line. Then wait for the caller to speak.",
+      "prospect_guidance": "You did not expect this call and you don't know mutherboard. Your default is to get the caller off the phone. You only agree to a meeting if the rep has said something specific and relevant to your department in the first minute, handled your brush-off without being pushy, and asked directly for a meeting. If they do all that, agree to a specific day and time (a weekday, in the next week or so) and confirm it. If they only vaguely suggest 'catching up' without a time, push for specifics or stay non-committal."
+    },
+    "discovery": {
+      "label": "Discovery",
+      "enabled": true,
+      "module": "discovery",
+      "time_limit_min": 20,
+      "starting_situation": "This is a first scheduled call. The prospect agreed to give you 30 minutes and knows mutherboard is a monday.com partner, but not much more.",
+      "success_condition": "An agreed next step (for example a demo or a scoping session) with a date.",
+      "rep_brief": "This is a first scheduled call and the prospect gave you 30 minutes. Uncover their situation, the real problem, its cost, who decides and how, then agree a next step with a date.",
+      "prospect_opening": "You've joined a scheduled call. Your very first line is ONLY a short, casual greeting like 'Hi there.' or 'Hello, hi.' Do NOT say your name, job title or company in that first line. Then wait for the rep to run the meeting. You know they are from mutherboard, a monday.com partner, and that you agreed to a call about how you work.",
+      "prospect_guidance": "You agreed to this call because you have some pain, but you haven't made up your mind. Share what you know according to your difficulty and personality. Agree to a next step (for example a demo or a scoping session) only if the rep has uncovered your real pain, made the value clear, and proposed a specific next step. Then agree a date."
+    },
+    "demo": {
+      "label": "Demo",
+      "enabled": false,
+      "module": "demo",
+      "time_limit_min": 20,
+      "starting_situation": "Discovery is done. The rep will describe verbally how mutherboard would set up monday.com for you (no screen share).",
+      "success_condition": "The prospect agrees to a scoping session or a proposal.",
+      "rep_brief": "Discovery is done. Describe how mutherboard would set monday.com up for this prospect, tie it to their pain and metrics, and check in as you go. No screen share.",
+      "prospect_opening": "You've joined the follow-up call after an earlier discovery conversation. Greet the rep and let them start. You remember discussing your main pain but not every detail.",
+      "prospect_guidance": "You are evaluating the proposed setup. Ask a couple of product questions. Agree to a scoping session or a proposal only if the walkthrough was tailored to your situation, tied to your metrics and checked in with you. Otherwise stay polite but non-committal."
+    },
+    "objection_handling": {
+      "label": "Objection handling",
+      "enabled": false,
+      "module": "objection_handling",
+      "time_limit_min": 10,
+      "starting_situation": "The prospect is interested but raises several objections in a row.",
+      "success_condition": "The prospect's final stance moves to 'let's continue'.",
+      "rep_brief": "The prospect is interested but has concerns. Handle each objection well and move them to 'let's continue'.",
+      "prospect_opening": "You are interested but have concerns. Open by saying you like the idea in principle, then raise your first objection quickly.",
+      "prospect_guidance": "Raise your objections one at a time, in a row. Move to 'let's continue' only if the rep handles them well (acknowledges, asks a question, gives evidence and confirms). Otherwise remain hesitant."
+    },
+    "pricing_negotiation": {
+      "label": "Pricing negotiation",
+      "enabled": false,
+      "module": "pricing_negotiation",
+      "time_limit_min": 15,
+      "starting_situation": "A proposal has been sent: 40 hours at the standard rate. The prospect pushes on price.",
+      "success_condition": "A deal is agreed without discounting beyond the allowed limit.",
+      "rep_brief": "A proposal for 40 hours has been sent. The prospect will push on price. Protect value and stay within the discount rule.",
+      "proposal": { "hours": 40 },
+      "prospect_opening": "You've read the proposal and want to talk about the price. Open by saying it's more than you expected.",
+      "prospect_guidance": "Push for a bigger discount than the allowed limit at first. Agree the deal if the rep restates value, justifies the hours, trades concessions for what they give and stays within the discount rule. If the rep offers more than the allowed discount, accept happily - the rep has failed the negotiation."
+    }
+  }
+}

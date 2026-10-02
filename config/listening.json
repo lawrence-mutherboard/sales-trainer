@@ -1,0 +1,7 @@
+{
+  "_help": "How long the app waits after you stop talking before deciding your turn is over (milliseconds). Shorter = the prospect answers sooner but may cut you off when you pause to think. The wait depends on how you stopped: finished_ms if it ended with a question mark or full stop, unfinished_ms if you stopped on a word like 'and', 'the' or 'so' (you're probably still thinking), guessing_ms while the browser is still working out your last words, normal_ms otherwise.",
+  "normal_ms": 800,
+  "guessing_ms": 1400,
+  "finished_ms": 650,
+  "unfinished_ms": 1600
+}
