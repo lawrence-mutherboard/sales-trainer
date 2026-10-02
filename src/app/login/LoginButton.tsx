@@ -14,7 +14,9 @@ export function LoginButton() {
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
         // Hint only - the domain is enforced on the server in /auth/callback and in the database.
-        queryParams: { hd: "mutherboard.com" },
+        // "select_account" makes Google show its account picker every time, so people on a shared or already
+        // signed-in browser choose their own account instead of being signed in as whoever Google remembers.
+        queryParams: { hd: "mutherboard.com", prompt: "select_account" },
       },
     });
     if (error) setBusy(false);
