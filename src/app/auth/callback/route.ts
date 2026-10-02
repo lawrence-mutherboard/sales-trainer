@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isAllowedEmail } from "@/lib/api/auth";
+import { siteOrigin } from "@/lib/siteUrl";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const origin = process.env.NEXT_PUBLIC_SITE_URL ?? url.origin;
+  const origin = siteOrigin(request);
 
   if (!code) return NextResponse.redirect(`${origin}/login?error=auth`);
 

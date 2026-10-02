@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { siteOrigin } from "@/lib/siteUrl";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
 
@@ -30,10 +31,8 @@ export async function updateSession(request: NextRequest) {
   if (!user && !isPublic) {
     // API routes get a 401 instead of a redirect.
     if (path.startsWith("/api/")) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.search = "";
-    return NextResponse.redirect(url);
+    // Build the address from the public site address, not the internal one the host may show us.
+    return NextResponse.redirect(`${siteOrigin(request)}/login`);
   }
   return response;
 }

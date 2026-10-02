@@ -225,6 +225,25 @@ These are estimates, not measurements. After your first few calls, check real sp
 
 ---
 
+## 8b. Putting it online on Render
+
+1. Push the project to a **private** GitHub repository (never commit `.env.local`).
+2. On render.com: **New +, then Web Service** (or **Blueprint** to use the included `render.yaml`), and pick the repository. Use:
+   - Build command: `npm install && npm run build`
+   - Start command: `npm start`
+   - Environment variable `NODE_VERSION` = `22`
+3. Under **Environment**, add every value from your `.env.local` (names are listed in `render.yaml` and `.env.example`). Set:
+   - `SITE_URL` = your Render address, for example `https://your-app.onrender.com`
+   - `NEXT_PUBLIC_SITE_URL` = the same address
+   - Variables starting with `NEXT_PUBLIC_` are baked into the build. After changing one, use **Manual Deploy, then Clear build cache and deploy**.
+4. **Supabase, Authentication, URL Configuration** (this is the usual cause of being sent back to localhost after Google sign-in):
+   - **Site URL** = your Render address (not `http://localhost:3000`)
+   - **Redirect URLs**: add `https://your-app.onrender.com/auth/callback`. Keep the localhost one too for local testing.
+5. Google Cloud needs no change: its redirect address is Supabase's, not Render's.
+6. Free Render instances **sleep after about 15 minutes idle**; the first visit afterwards takes about a minute. Set spending limits with OpenAI, Anthropic and ElevenLabs before sharing the link.
+
+---
+
 ## 9. Known limitations of the prototype
 
 - **Chrome/Edge only** for voice. Other browsers get the typing fallback.
