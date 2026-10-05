@@ -16,7 +16,7 @@ import benchmarksJson from "../../../config/benchmarks.json";
 // All business content lives in /config. This file only validates it and gives it types.
 // Config is server-only on purpose: the browser never receives objections, persona pools or the rubric.
 
-export const SIZES = ["smb", "enterprise"] as const;
+export const SIZES = ["smb", "mid_market", "enterprise"] as const;
 export const DEPARTMENTS = ["sales", "operations", "product", "finance"] as const;
 export const PERSONALITIES = ["friendly", "uninterested", "skeptical"] as const;
 export const DIFFICULTIES = ["easy", "medium", "hard"] as const;

@@ -33,3 +33,15 @@ assert(refusalReason({ email: "a@gmail.com" }) === "domain", "...with the reason
 
 process.env.ALLOWED_EMAIL_DOMAIN = "@Example.org";
 assert(isAllowedEmail("x@example.org"), "the domain can be changed with ALLOWED_EMAIL_DOMAIN");
+
+// Password rule
+import { passwordMessage, passwordProblems } from "../src/lib/passwordRules";
+assert(passwordProblems("Abcdef12").length === 0, "8 characters with upper, lower and a number is accepted");
+assert(passwordProblems("Abcde12").length === 1, "7 characters is too short");
+assert(passwordProblems("abcdefg1").join() === "an uppercase letter", "no uppercase is refused");
+assert(passwordProblems("ABCDEFG1").join() === "a lowercase letter", "no lowercase is refused");
+assert(passwordProblems("Abcdefgh").join() === "a number", "no number is refused");
+assert(passwordProblems("abc").length === 3, "\"abc\" is too short, has no uppercase and no number (three problems)");
+assert(passwordMessage("Abcdef12") === null, "a good password gives no message");
+assert(passwordMessage("abcdefgh") === "Your password needs an uppercase letter and a number.", "the message lists what is missing");
+assert(passwordProblems("Correct Horse 9").length === 0, "spaces are allowed");

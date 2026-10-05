@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { PASSWORD_HINT, passwordMessage } from "@/lib/passwordRules";
 
 type Mode = "signin" | "signup" | "forgot";
 
 const DOMAIN = (process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAIN ?? "mutherboard.com").replace(/^@/, "").toLowerCase();
-const MIN_PASSWORD = 10;
 
 function friendly(message: string): string {
   const m = message.toLowerCase();
@@ -14,8 +14,8 @@ function friendly(message: string): string {
   if (m.includes("email not confirmed")) return "Please confirm your email first. Check your inbox (and spam) for the link.";
   if (m.includes("already registered") || m.includes("already been registered")) return "That email already has an account. Sign in instead, or use Forgot password.";
   if (m.includes("rate limit") || m.includes("too many")) return "Too many attempts. Please wait a few minutes and try again.";
-  if (m.includes("password") && (m.includes("characters") || m.includes("weak") || m.includes("short")))
-    return `Your password needs at least ${MIN_PASSWORD} characters.`;
+  if (m.includes("password") && (m.includes("characters") || m.includes("weak") || m.includes("short") || m.includes("should contain")))
+    return PASSWORD_HINT;
   return message;
 }
 
@@ -50,8 +50,9 @@ export function AuthForm({ signOutFirst = false }: { signOutFirst?: boolean }) {
       setError(`Use your @${DOMAIN} work email.`);
       return;
     }
-    if (mode === "signup" && password.length < MIN_PASSWORD) {
-      setError(`Choose a password of at least ${MIN_PASSWORD} characters.`);
+    const weak = mode === "signup" ? passwordMessage(password) : null;
+    if (weak) {
+      setError(weak);
       return;
     }
 
@@ -139,7 +140,7 @@ export function AuthForm({ signOutFirst = false }: { signOutFirst?: boolean }) {
             autoComplete={mode === "signup" ? "new-password" : "current-password"}
             className="w-full rounded-lg border border-slate-300 px-3 py-2"
           />
-          {mode === "signup" && <span className="mt-1 block text-xs text-slate-500">At least {MIN_PASSWORD} characters.</span>}
+          {mode === "signup" && <span className="mt-1 block text-xs text-slate-500">{PASSWORD_HINT}</span>}
         </label>
       )}
 

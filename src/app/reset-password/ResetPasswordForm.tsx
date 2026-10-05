@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-
-const MIN_PASSWORD = 10;
+import { PASSWORD_HINT, passwordMessage } from "@/lib/passwordRules";
 
 export function ResetPasswordForm() {
   const [password, setPassword] = useState("");
@@ -12,8 +11,9 @@ export function ResetPasswordForm() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (password.length < MIN_PASSWORD) {
-      setError(`Choose a password of at least ${MIN_PASSWORD} characters.`);
+    const weak = passwordMessage(password);
+    if (weak) {
+      setError(weak);
       return;
     }
     setBusy(true);
@@ -39,7 +39,7 @@ export function ResetPasswordForm() {
           autoComplete="new-password"
           className="w-full rounded-lg border border-slate-300 px-3 py-2"
         />
-        <span className="mt-1 block text-xs text-slate-500">At least {MIN_PASSWORD} characters.</span>
+        <span className="mt-1 block text-xs text-slate-500">{PASSWORD_HINT}</span>
       </label>
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
       <button

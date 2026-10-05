@@ -58,7 +58,7 @@ export default async function HistoryPage() {
                       <span className="text-slate-400"> · {r.prospect_company}</span>
                     </td>
                     <td className="hidden px-4 py-3 capitalize text-slate-500 md:table-cell">
-                      {r.company_size} · {r.department} · {r.personality} · {r.difficulty}
+                      {r.company_size.replace("_", "-")} · {r.department} · {r.personality} · {r.difficulty}
                     </td>
                     <td className="px-4 py-3 font-semibold">{score ? `${score.total}/100` : "—"}</td>
                     <td className="px-4 py-3">

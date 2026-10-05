@@ -68,7 +68,7 @@ People create an account with their `@mutherboard.com` email and a password. Sup
 
 In Supabase:
 1. **Authentication, then Sign In / Providers, then Email**: make sure it is **enabled** and **Confirm email** is **ON**. **Keep it on.** It proves that a person really owns the mailbox. Without it, anyone could register as `someone@mutherboard.com`. If this project is shared with other things, this setting applies to all of them, so check with whoever manages it before changing anything.
-2. On the same page set **Minimum password length** to **10** (the app also checks this).
+2. On the same page set the password rules to match the app: **Minimum password length 8**, and **require lowercase letters, uppercase letters and digits** (the app also checks this, but only Supabase can enforce it for everyone).
 3. **Authentication, then URL Configuration**:
    - **Site URL**: your Render address (or `http://localhost:3000` while testing locally)
    - **Redirect URLs**: add `https://your-app.onrender.com/**` and `http://localhost:3000/**`

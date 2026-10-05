@@ -47,7 +47,7 @@ $$;
 create table public.trainer_sessions (
   id               uuid primary key default gen_random_uuid(),
   rep_id           uuid not null references public.trainer_profiles (id) on delete cascade,
-  company_size     text not null check (company_size in ('smb', 'enterprise')),
+  company_size     text not null check (company_size in ('smb', 'mid_market', 'enterprise')),
   department       text not null check (department in ('sales', 'operations', 'product', 'finance')),
   personality      text not null check (personality in ('friendly', 'uninterested', 'skeptical')),
   scenario         text not null,

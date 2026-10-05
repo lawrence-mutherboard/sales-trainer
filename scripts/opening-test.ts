@@ -34,11 +34,11 @@ async function main() {
   await Promise.all(
     Array.from({ length: 4 }, async () => {
       for (let job = queue.shift(); job; job = queue.shift()) {
-        const sizes = ["smb", "enterprise"] as const;
+        const sizes = ["smb", "mid_market", "enterprise"] as const;
         const depts = ["sales", "operations", "product", "finance"] as const;
-        const p = generateProspect({ companySize: sizes[job.n % 2], department: depts[job.n % 4], difficulty: "medium", scenario: job.scenario });
+        const p = generateProspect({ companySize: sizes[job.n % 3], department: depts[job.n % 4], difficulty: "medium", scenario: job.scenario });
         const session = {
-          id: "x", rep_id: "y", company_size: sizes[job.n % 2], department: depts[job.n % 4], personality: "friendly", scenario: job.scenario,
+          id: "x", rep_id: "y", company_size: sizes[job.n % 3], department: depts[job.n % 4], personality: "friendly", scenario: job.scenario,
           difficulty: "medium", prospect_name: p.name, prospect_title: p.title, prospect_company: p.company, input_mode: "voice" as const,
           status: "ready" as const, ended_by: null, duration_ms: null, started_at: "", ended_at: null,
         };
