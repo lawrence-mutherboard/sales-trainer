@@ -26,19 +26,13 @@ services:
         sync: false
       - key: ALLOWED_EMAIL_DOMAIN
         value: mutherboard.com
-      - key: LLM_PROVIDER
-        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: ANTHROPIC_WORKSPACE_ID
         sync: false
-      - key: OPENAI_API_KEY
-        sync: false
       - key: NEXT_PUBLIC_TTS_PROVIDER
         sync: false
       - key: NEXT_PUBLIC_STT_PROVIDER
-        sync: false
-      - key: TTS_BACKEND
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false

@@ -14,14 +14,14 @@ import type { SpeakSpan, Synth, UserUtterance, VoiceAdapter, VoiceStartOptions }
  */
 
 /**
- * Accurate transcription (NEXT_PUBLIC_STT_PROVIDER=openai): Chrome still gives the live captions and decides when a turn
+ * Accurate transcription (NEXT_PUBLIC_STT_PROVIDER=elevenlabs): Chrome still gives the live captions and decides when a turn
  * has ended, but the words come from re-transcribing the recorded audio, which understands context ("bad time", not "bed time").
  * If that is slow or fails, the browser's own text is used instead.
  */
 /** The longest the app will keep a turn open past the normal wait just because the microphone still hears sound. */
 const MAX_EXTRA_WAIT_MS = 8000;
 
-const ACCURATE_STT =process.env.NEXT_PUBLIC_STT_PROVIDER === "openai";
+const ACCURATE_STT = process.env.NEXT_PUBLIC_STT_PROVIDER === "elevenlabs";
 const TRANSCRIBE_TIMEOUT_MS = 3500;
 
 interface RecognitionResult {

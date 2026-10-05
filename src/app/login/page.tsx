@@ -21,8 +21,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </div>
       <p className="mt-6 text-xs text-slate-500">
         Calls are recorded as text transcripts and kept for 90 days. To turn your speech into text, your voice is sent
-        to Google&apos;s speech service (through Chrome) and to OpenAI for a more accurate transcript. The prospect&apos;s
-        replies are also spoken using OpenAI. This app does not store any audio.
+        to Google&apos;s speech service (through Chrome) and to ElevenLabs for a more accurate transcript. The prospect&apos;s
+        voice is made by ElevenLabs, and the prospect&apos;s words come from Anthropic&apos;s Claude. This app does not store any audio.
       </p>
     </div>
   );

@@ -2,9 +2,9 @@ import "server-only";
 import { config } from "@/lib/config";
 import type { Accent } from "@/lib/voice/accent";
 
-// ElevenLabs text-to-speech for the prospect's voice. Used by /api/tts when TTS_BACKEND=elevenlabs and
+// ElevenLabs text-to-speech for the prospect's voice. Used by /api/tts whenever
 // ELEVENLABS_API_KEY is set. Audio is requested as raw 24 kHz 16-bit mono (pcm_24000), the same format the
-// OpenAI voice produces, so the browser's streaming player works unchanged.
+// player expects, so the browser's streaming playback works unchanged.
 
 const API = "https://api.elevenlabs.io";
 
@@ -12,7 +12,7 @@ const API = "https://api.elevenlabs.io";
 export class ElevenSetupError extends Error {}
 
 export function elevenLabsEnabled(): boolean {
-  return process.env.TTS_BACKEND === "elevenlabs" && Boolean(process.env.ELEVENLABS_API_KEY);
+  return Boolean(process.env.ELEVENLABS_API_KEY);
 }
 
 function hash(s: string): number {
@@ -111,4 +111,38 @@ export async function streamElevenLabsSpeech(args: {
     throw new Error(`ElevenLabs ${res.status}: ${detail.slice(0, 300)}`);
   }
   return res;
+}
+
+// ---- Speech to text (Scribe) -------------------------------------------------------------------------------------
+// Turns a clip of the rep's speech (a WAV file) into text. A list of expected words ("keyterms") nudges it towards the
+// right spelling of names like mutherboard and monday.com. ElevenLabs charges a small extra for using keyterms.
+
+export async function transcribeWithScribe(wav: Blob, keyterms: string[]): Promise<string> {
+  const stt = config.ai.stt;
+
+  const send = async (withKeyterms: boolean) => {
+    const form = new FormData();
+    form.append("file", wav, "speech.wav");
+    form.append("model_id", stt.model_id);
+    form.append("language_code", "en");
+    form.append("tag_audio_events", "false");
+    form.append("diarize", "false");
+    if (withKeyterms) for (const t of keyterms.slice(0, 1000)) form.append("keyterms", t.slice(0, 50));
+    return fetch(`${API}/v1/speech-to-text`, {
+      method: "POST",
+      headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY! },
+      body: form,
+    });
+  };
+
+  let res = await send(stt.use_keyterms && keyterms.length > 0);
+  // If the service rejects the keyterms, still transcribe the clip rather than losing the turn.
+  if ((res.status === 400 || res.status === 422) && stt.use_keyterms) res = await send(false);
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`ElevenLabs speech-to-text ${res.status}: ${detail.slice(0, 300)}`);
+  }
+  const data = (await res.json()) as { text?: string };
+  return (data.text ?? "").trim();
 }

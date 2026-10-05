@@ -53,25 +53,13 @@ const business = z.object({
 });
 
 const ai = z.object({
-  provider: z.enum(["anthropic", "openai"]),
-  openai: z.object({
-    prospect_model: z.string(),
-    prospect_max_tokens: z.number(),
-    prospect_temperature: z.number(),
-    scorer_model: z.string(),
-    scorer_max_tokens: z.number(),
-    scorer_reasoning_effort: z.enum(["minimal", "low", "medium", "high"]).nullable(),
-  }),
   stt: z.object({
-    model: z.string(),
-    prompt: z.string(),
+    model_id: z.string(),
+    use_keyterms: z.boolean(),
     vocabulary: z.array(z.string()),
   }),
   tts: z.object({
-    model: z.string(),
     speed: z.number(),
-    voices: z.object({ feminine: z.array(z.string()).min(1), masculine: z.array(z.string()).min(1) }),
-    instructions: z.string(),
     elevenlabs: z.object({
       model_id: z.string(),
       voices: z.object({
@@ -82,14 +70,11 @@ const ai = z.object({
       moods: z.record(z.string(), z.object({ stability: z.number(), style: z.number() })),
       personalities: z.record(z.string(), z.object({ stability: z.number(), style: z.number() })),
     }),
-    personality_style: z.record(z.string(), z.string()),
+    // The labels the AI uses to show how the prospect feels (the app uses the names).
     moods: z.record(z.string(), z.string()),
-    // false = the voice direction is identical for every sentence, so the voice stays the same all call.
-    // true = each reply's mood is added to the direction (more expressive, but the voice can drift).
-    mood_in_instructions: z.boolean(),
-    // "whole" = the reply is spoken as one piece (smoother, like openai.fm). "sentences" = spoken sentence by sentence (starts a little sooner).
+    // "whole" = the reply is spoken as one piece (smoothest). "first_then_rest" = first sentence, then the rest. "sentences" = sentence by sentence (starts soonest).
     speak_mode: z.enum(["whole", "first_then_rest", "sentences"]),
-    accent: z.object({ uk_percent: z.number().min(0).max(100), uk: z.string(), us: z.string() }),
+    accent: z.object({ uk_percent: z.number().min(0).max(100) }),
     // Mood only changes the speaking pace (a multiplier on "speed"), which never changes who the voice sounds like.
     mood_speed: z.record(z.string(), z.number()),
     fillers: z.array(z.string()),
@@ -301,7 +286,7 @@ function checkConfig() {
     if (!moods[m]) throw new Error(`silence.json: unknown mood "${m}" (add it to ai.json -> tts.moods)`);
   }
   for (const p of Object.keys(config.personas.personalities)) {
-    if (!config.ai.tts.personality_style[p]) throw new Error(`ai.json -> tts.personality_style is missing "${p}"`);
+    if (!config.ai.tts.elevenlabs.personalities[p]) throw new Error(`ai.json -> tts.elevenlabs.personalities is missing "${p}"`);
   }
   for (const [key, sc] of Object.entries(s)) {
     if (!r.modules[sc.module]) throw new Error(`scenarios.json: "${key}" points at unknown rubric module "${sc.module}"`);

@@ -21,22 +21,28 @@ node -v
 
 ---
 
-## 1. AI key: Claude (intended) or OpenAI (to try the app now)
+## 1. AI keys: Claude and ElevenLabs
 
-**No Anthropic API access yet?** The app can run on OpenAI in the meantime:
-1. Create a key at https://platform.openai.com/api-keys (add a small credit balance in Billing).
-2. In `.env.local` set `LLM_PROVIDER=openai` and `OPENAI_API_KEY=...` (step 4).
-3. Models are set in `config/ai.json` under `openai` (default `gpt-4.1-mini` for the prospect and `gpt-4.1` for scoring).
+The app uses two services, and nothing else:
 
-Treat OpenAI as a stand-in for testing: the prompts and rubric were written for Claude, so prospect realism and scoring consistency may be lower. Don't use it for calibration or real team scores. When Anthropic access arrives, set `LLM_PROVIDER=anthropic` (or delete the line) and add `ANTHROPIC_API_KEY`. Nothing else changes.
+| Service | What it does here |
+|---|---|
+| **Claude** (Anthropic) | Writes the prospect's replies and scores the call |
+| **ElevenLabs** | Speaks the prospect's voice, and transcribes what you say accurately |
 
-### Anthropic key (the intended provider)
-
+### Claude (Anthropic) key
 1. Go to https://console.anthropic.com and sign in (or create an account).
 2. **Settings → Billing**: add a payment method and a small credit balance. Set a monthly spend limit while you're testing.
 3. **Settings → API keys → Create key**. Name it `sales-trainer-dev`. Copy it now, because it's only shown once.
+4. If requests fail with "not scoped to a workspace", either create the key inside a workspace, or put the workspace ID in `ANTHROPIC_WORKSPACE_ID`.
 
 You'll paste it into `.env.local` as `ANTHROPIC_API_KEY`.
+
+### ElevenLabs key
+1. Sign in at https://elevenlabs.io. The plan must allow API use, and commercial use if the team will use the app for work.
+2. In the left menu go to **Developers → API Keys**, and create (or edit) a key. Give it these permissions, or turn the key's restriction off: **Text to Speech**, **Voices (Read)** and **Speech to Text**.
+3. Paste it into `.env.local` as `ELEVENLABS_API_KEY`.
+4. Check it works: `npm run elevenlabs:voices` lists your voices, and `npm run test:elevenlabs` and `npm run test:scribe` test the voice and the transcription.
 
 ---
 
@@ -93,11 +99,11 @@ Fill in `.env.local`:
 
 | Variable | Value | Secret? |
 |---|---|---|
-| `LLM_PROVIDER` | `openai` for now, `anthropic` once you have Claude access | No |
-| `OPENAI_API_KEY` | From step 1 (only if using OpenAI) | Yes |
-| `ANTHROPIC_API_KEY` | From step 1 (only if using Claude) | Yes |
-| `NEXT_PUBLIC_TTS_PROVIDER` | `openai` for the natural prospect voice, or blank for the free browser voice | No |
-| `NEXT_PUBLIC_STT_PROVIDER` | `openai` for accurate speech recognition, or blank for Chrome only | No |
+| `ANTHROPIC_API_KEY` | From step 1 | Yes |
+| `ANTHROPIC_WORKSPACE_ID` | Only if Anthropic says the key isn't tied to a workspace | No |
+| `ELEVENLABS_API_KEY` | From step 1 | Yes |
+| `NEXT_PUBLIC_TTS_PROVIDER` | `elevenlabs` for the prospect's ElevenLabs voice, or blank for the free (robotic) browser voice | No |
+| `NEXT_PUBLIC_STT_PROVIDER` | `elevenlabs` for accurate speech recognition (ElevenLabs Scribe), or blank for Chrome only | No |
 | `NEXT_PUBLIC_SUPABASE_URL` | From step 2.6 | No |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From step 2.6 | No (public by design) |
 | `SUPABASE_SERVICE_ROLE_KEY` | From step 2.6 | **Yes, server only** |
@@ -173,16 +179,16 @@ Restart `npm run dev` (or it hot-reloads) after editing, and run `npm run check-
 
 | Feature | How it works | Where to change it |
 |---|---|---|
-| **Natural voice** | The prospect's speech comes from OpenAI's neural voice instead of the browser's. Same voice all call. Turn on with `NEXT_PUBLIC_TTS_PROVIDER=openai` in `.env.local`; delete the line for the free browser voice. Needs `OPENAI_API_KEY` even if the AI brain is Claude. | `config/ai.json → tts` |
-| **openai.fm-style delivery** | The voice model is the same one behind openai.fm. The app uses its "vibe" format (`tts.instructions`: affect, tone, pacing, emotion...), speaks the first sentence as soon as it is ready and the rest as one piece (`tts.speak_mode: "first_then_rest"`; `"whole"` is smoothest but slowest to start, `"sentences"` is the quickest), and streams the audio so it starts before the clip is finished. To match a voice or vibe you liked on openai.fm, put the voice name in `tts.voices` and the vibe text in `tts.instructions`. `tts.speed` sets the pace (1.0 is normal; 1.2 is brisk). | `config/ai.json → tts` |
-| **Accurate speech recognition** | Your microphone is recorded (in memory only) and each turn is re-transcribed by OpenAI (`gpt-4o-transcribe`) with a vocabulary hint, so it understands context ("bad time", not "bed time"; "mutherboard", not "motherboard"). Chrome still shows the live captions and spots when you stop talking; the OpenAI transcription starts while you pause, so it adds little delay. If it's slow (over 3.5 s) or looks wrong, Chrome's text is used. Turn on with `NEXT_PUBLIC_STT_PROVIDER=openai` in `.env.local`; delete the line for Chrome only. Add your own terms to `stt.vocabulary`. Cost is a few cents per call (check OpenAI's pricing). **Privacy: your voice now goes to Google (Chrome) and OpenAI. Update your privacy notice and data agreements accordingly.** | `config/ai.json → stt`, `config/speech_corrections.json` |
-| **Personality and mood in the voice** | Every reply starts with a hidden mood tag (`{impatient}`, `{warm}`, ...). The voice follows it, on top of a per-personality style (uninterested = flat and tired). | `tts.personality_style`, `tts.moods` |
+| **Natural voice** | The prospect's speech comes from an ElevenLabs voice instead of the browser's, streamed so it starts quickly. The voice (gender and accent) is chosen from the prospect's name and stays the same all call. Turn on with `NEXT_PUBLIC_TTS_PROVIDER=elevenlabs` in `.env.local`. Choose favourite voices by pasting their IDs into `tts.elevenlabs.voices` (run `npm run elevenlabs:voices` to see yours); if the lists are empty the app picks matching voices from your account. | `config/ai.json → tts.elevenlabs` |
+| **How it is spoken** | Each reply is spoken as the first sentence as soon as it is ready and the rest as one piece (`tts.speak_mode: "first_then_rest"`; `"whole"` is smoothest but slowest to start, `"sentences"` is quickest). `tts.speed` sets the pace (ElevenLabs allows 0.7 to 1.2). Numbers and names are tidied for speech ("£160" becomes "160 pounds"). | `config/ai.json → tts` |
+| **Accurate speech recognition** | Your microphone is recorded (in memory only) and each turn is re-transcribed by ElevenLabs Scribe (`stt.model_id`) with a vocabulary hint, so it understands context ("bad time", not "bed time"; "mutherboard", not "motherboard"). Chrome still shows the live captions and spots when you stop talking; the transcription starts while you pause, so it adds little delay. If it's slow (over 3.5 s) or looks wrong, Chrome's text is used. Turn on with `NEXT_PUBLIC_STT_PROVIDER=elevenlabs`; delete the line for Chrome only. Add your own terms to `stt.vocabulary` (ElevenLabs charges a small extra for these hints; set `stt.use_keyterms` to false to stop). **Privacy: your voice now goes to Google (Chrome) and ElevenLabs. Update your privacy notice and data agreements accordingly.** | `config/ai.json → stt`, `config/speech_corrections.json` |
+| **Personality and mood in the voice** | Every reply starts with a hidden mood tag (`{impatient}`, `{warm}`, ...). The voice follows it by becoming steadier or more animated, on top of a baseline for each personality (uninterested = flatter). It never changes which voice it is. | `tts.elevenlabs.moods`, `tts.elevenlabs.personalities` |
 | **Staying in role** | A firm "you are the customer" section, a role reminder on every turn, and short example replies. Add an example whenever you catch the prospect getting something wrong. | `config/roleplay_examples.json` |
-| **Accent mix** | Each prospect speaks with a fixed accent for the whole call, chosen at random: about 80% British, 20% American (`tts.accent.uk_percent`). The OpenAI voices are US-native, so the British accent is an imitation steered by the instructions | `config/ai.json → tts.accent` |
+| **Accent mix** | Each prospect speaks with a fixed accent for the whole call, chosen at random: about 80% British, 20% American (`tts.accent.uk_percent`). British prospects use British ElevenLabs voices and American ones use American voices. | `config/ai.json → tts.accent` |
 | **Report: speaking metrics** | The report shows talk time, speaking pace (words/min), filler words, longest stretch talking and questions asked, each against a benchmark from public sales research (Gong, Hyperbound), with the sources listed in the report. Computed in code from your recording and timestamps, not judged by the AI. Pace and monologue are estimates; filler counts are a minimum because speech-to-text often removes fillers (the transcription is told to keep them). | `config/benchmarks.json` |
 | **Silence follow-ups** | If you go quiet in a voice call, the prospect says "Hello?" after 4 s, another "Hello?" 2 s after that, then a goodbye and hangs up 2 s later. Any speech from you resets it. Not used in typed calls. The lines are saved in the transcript. | `config/silence.json` |
 | **Fillers** (off by default) | A quick "Mm." or "Right." while a slow reply loads. They fired on almost every turn once replies were spoken as one piece, so they are switched off. Add phrases to `tts.fillers` to try them again. | `config/ai.json → tts.fillers` |
-| **Portraits** | An AI-generated face on the call screens, with a glow while they speak. Falls back to initials until you generate some (below). | `public/portraits/` |
+| **Portraits** | A photo of the prospect on the call screens, with a glow while they speak. Shows initials until you add photos: drop images into `public/portraits/` and list each in `manifest.json` as `{ "file": "name.jpg", "gender": "feminine" }` (or `"masculine"`). Use AI-generated or stock faces you have the right to use. | `public/portraits/` |
 
 **Test that the prospect stays in role** (a few cents; uses your AI key):
 
@@ -192,19 +198,11 @@ npm run test:role
 
 Re-run it after changing the model, the prompt or the examples. It sends 20 tricky rep lines and flags replies that sound like a salesperson.
 
-**Generate the portrait library** (costs money per image; check OpenAI's pricing first, `low` quality is cheapest):
-
-```bash
-npm run portraits                       # shows the plan, spends nothing
-npm run portraits -- --yes              # generates 12 portraits
-npm run portraits -- --yes --count 30   # generates 30
-```
-
-Portraits are matched to the prospect's name (feminine or masculine), never to personality or difficulty, and are labelled "AI-generated fictional person". You can also drop your own photos into `public/portraits/` and list them in `manifest.json` as `{ "file": "name.jpg", "gender": "feminine" }`.
+Portraits are matched to the prospect's name (feminine or masculine), never to personality or difficulty, and are labelled "AI-generated fictional person". Change that label in `src/components/Avatar.tsx` if your photos are not AI-generated.
 
 **Tuning the feel:**
 - If the prospect cuts you off when you pause to think, raise `SILENCE_AFTER_FINAL_MS` in `src/lib/voice/browser.ts`.
-- If it still slips out of role, change `openai.prospect_model` in `config/ai.json` to `gpt-4.1` (a bit slower and dearer, better at holding a role).
+- If it ever slips out of role, add an example of the right reply to `config/roleplay_examples.json` and re-run `npm run test:role`.
 
 ---
 
@@ -217,11 +215,9 @@ Portraits are matched to the prospect's name (feminine or masculine), never to p
 
 **With Claude** (Sonnet 5.5 at $2 / $10 per million tokens in / out for the prospect, Opus 5.5 at $4 / $20 for scoring): about **15 to 35 US cents per call**, so about $15 to $35 per 100 calls.
 
-**With OpenAI** (`gpt-4.1-mini` prospect, `gpt-4.1` scorer): about **5 to 10 US cents per call**, if the prices are still what I remember from those models' launch ($0.40 / $1.60 and $2 / $8 per million tokens). **Check OpenAI's pricing page before relying on this.**
+**ElevenLabs** is billed by characters (voice) and by seconds of audio (transcription), against your plan's allowance. A 10-minute call has roughly 3,000 to 4,000 characters of prospect speech. Check your plan's allowance and prices on ElevenLabs' site; I haven't verified current prices.
 
-The natural voice adds a small extra cost (a cent or two per minute of prospect speech, from memory; check OpenAI's pricing). Portrait generation is a one-off, per image.
-
-These are estimates, not measurements. After your first few calls, check real spend in the provider's usage page. In development the server terminal logs cached-token counts for each prospect turn (`cache_read=` for Claude, `cached=` for OpenAI). If they stay at `0` after the second turn, prompt caching isn't kicking in and calls cost a bit more.
+These are estimates, not measurements. After your first few calls, check real spend in the provider's usage page. In development the server terminal logs cached-token counts for each prospect turn (`cache_read=`). If they stay at `0` after the second turn, prompt caching isn't kicking in and calls cost a bit more.
 
 ---
 
@@ -240,7 +236,7 @@ These are estimates, not measurements. After your first few calls, check real sp
    - **Site URL** = your Render address (not `http://localhost:3000`)
    - **Redirect URLs**: add `https://your-app.onrender.com/auth/callback`. Keep the localhost one too for local testing.
 5. Google Cloud needs no change: its redirect address is Supabase's, not Render's.
-6. Free Render instances **sleep after about 15 minutes idle**; the first visit afterwards takes about a minute. Set spending limits with OpenAI, Anthropic and ElevenLabs before sharing the link.
+6. Free Render instances **sleep after about 15 minutes idle**; the first visit afterwards takes about a minute. Set spending limits with Anthropic and ElevenLabs before sharing the link.
 
 ---
 

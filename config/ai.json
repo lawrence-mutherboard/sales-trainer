@@ -1,18 +1,9 @@
 {
-  "_help": "provider picks which AI vendor is used (LLM_PROVIDER in .env.local overrides it). Claude ('anthropic') is the intended provider: the prompts and rubric are tuned for it. 'openai' is for trying the app before Anthropic API access is available. The 'prospect', 'scorer' and 'refusal_fallback' blocks below apply to Claude; the 'openai' block applies to OpenAI.",
-  "provider": "anthropic",
-  "openai": {
-    "prospect_model": "gpt-4.1-mini",
-    "prospect_max_tokens": 300,
-    "prospect_temperature": 0.9,
-    "scorer_model": "gpt-4.1",
-    "scorer_max_tokens": 8000,
-    "scorer_reasoning_effort": null
-  },
+  "_help": "Claude (Anthropic) writes the prospect's replies and scores the call; ElevenLabs speaks the prospect's voice and transcribes what the rep says. The 'prospect', 'scorer' and 'refusal_fallback' blocks apply to Claude.",
   "stt": {
-    "_help": "Accurate speech-to-text for what the rep says, used when NEXT_PUBLIC_STT_PROVIDER=openai in .env.local (needs OPENAI_API_KEY). Chrome still gives the live captions and spots when you stop talking; each turn is then re-transcribed from the recording. gpt-4o-mini-transcribe is cheaper and quicker but a little less accurate.",
-    "model": "gpt-4o-mini-transcribe",
-    "prompt": "This is a UK business phone call. A salesperson from a company called mutherboard, a monday.com partner, is talking to a prospect about project management, CRM and workflow software. Transcribe exactly what was said, word for word: keep filler words such as um, uh, erm, you know and false starts, and do not tidy up the speech.",
+    "_help": "Accurate speech-to-text for what the rep says, using ElevenLabs Scribe, used when NEXT_PUBLIC_STT_PROVIDER=elevenlabs in .env.local. Chrome still gives the live captions and spots when you stop talking; each turn is then re-transcribed from the recording. use_keyterms sends the vocabulary below as hints (ElevenLabs charges a small extra for this).",
+    "model_id": "scribe_v2",
+    "use_keyterms": true,
     "vocabulary": [
       "mutherboard",
       "monday.com",
@@ -32,37 +23,12 @@
     ]
   },
   "tts": {
-    "_help": "Natural prospect voice, used when NEXT_PUBLIC_TTS_PROVIDER=openai in .env.local (needs OPENAI_API_KEY). Otherwise the free browser voice is used. 'instructions' steers tone and accent (gpt-4o-mini-tts only).",
-    "model": "gpt-4o-mini-tts",
+    "_help": "The prospect's voice comes from ElevenLabs (see the 'elevenlabs' block). speed is the pace (ElevenLabs allows 0.7 to 1.2). accent.uk_percent is the share of prospects with a British accent; the rest are American. moods are the labels the AI uses to show how the prospect feels; mood_speed nudges the pace for each. speak_mode: whole | first_then_rest | sentences.",
     "speed": 1.1,
-    "voices": {
-      "feminine": [
-        "coral",
-        "nova",
-        "shimmer",
-        "sage",
-        "marin"
-      ],
-      "masculine": [
-        "ash",
-        "onyx",
-        "echo",
-        "ballad",
-        "cedar"
-      ]
-    },
     "accent": {
-      "uk_percent": 80,
-      "uk": "Accent: A natural, authentic British English (UK) accent, like someone who grew up in England. Not exaggerated, not posh, not a stage accent.",
-      "us": "Accent: A natural, authentic American English (US) accent, like a relaxed business professional from the US. Not exaggerated."
+      "uk_percent": 80
     },
-    "instructions": "Voice Affect: A busy business professional on a phone call; natural, unscripted, real. Tone: Conversational and matter-of-fact. Never a presenter, an announcer or an assistant. Pacing: Brisk and relaxed, the way people really talk on the phone, with the odd short pause and slight speed-ups on filler words. Emotion: Subtle and human. Let genuine feeling come through in small ways (a sigh, a half-laugh, a clipped word), not in big performance. Pronunciation: Clear but casual. Say contractions naturally. Consistency: The same person, voice and energy from start to finish.",
     "speak_mode": "first_then_rest",
-    "personality_style": {
-      "friendly": "Overall this person is warm, open and easy to talk to, with a smile in their voice and a lively, natural rhythm.",
-      "uninterested": "Overall this person is flat, tired and distracted, with low energy, little variation in pitch, short clipped answers, and the occasional sigh. They sound like they are doing something else while talking.",
-      "skeptical": "Overall this person is guarded, blunt and a little impatient, with a dry, measured tone and slightly clipped delivery. Not rude, but not warm."
-    },
     "moods": {
       "neutral": "matter-of-fact and natural",
       "warm": "warm and friendly, smiling",
@@ -74,7 +40,6 @@
       "irritated": "curt and annoyed",
       "distracted": "flat, distracted, only half paying attention"
     },
-    "mood_in_instructions": false,
     "mood_speed": {
       "impatient": 1.1,
       "irritated": 1.12,
