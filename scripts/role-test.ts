@@ -3,7 +3,7 @@
 // (the kind that made an earlier version flip into acting like the salesperson) and flags any reply that
 // sounds like a salesperson, or that is missing the {mood} tag.
 //
-// This calls the real AI provider (LLM_PROVIDER from .env.local) about 20 times with short prompts,
+// This calls the real AI provider (Claude, using the key in .env.local) about 20 times with short prompts,
 // which costs a few cents. Re-run it whenever you change the model, the prompt or roleplay_examples.json.
 import Module from "node:module";
 

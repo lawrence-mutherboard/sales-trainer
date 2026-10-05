@@ -2,8 +2,7 @@ import { BrowserSynth, synthSupported } from "./synth";
 import { decodePcm16, PCM_SAMPLE_RATE } from "./pcm";
 import type { SpeakSpan, Synth } from "./types";
 
-// Natural prospect voice: text is turned into speech by the server (/api/tts, OpenAI's gpt-4o-mini-tts, the model
-// behind openai.fm) and played as it streams in, so speech starts before the whole clip has been generated.
+// Natural prospect voice: text is turned into speech by the server (/api/tts, ElevenLabs) and played as it streams in, so speech starts before the whole clip has been generated.
 // The voice stays the same all call, because the server picks it from the prospect's name.
 // If a request fails twice, that piece falls back to the browser voice so the call keeps going.
 

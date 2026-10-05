@@ -1,4 +1,4 @@
-// OpenAI's "pcm" speech format is raw 16-bit signed little-endian mono samples at 24 kHz, with no header.
+// The "pcm" speech format (ElevenLabs pcm_24000) is raw 16-bit signed little-endian mono samples at 24 kHz, with no header.
 // Network chunks can split a 2-byte sample in half, so leftover bytes are carried into the next chunk.
 
 export const PCM_SAMPLE_RATE = 24000;

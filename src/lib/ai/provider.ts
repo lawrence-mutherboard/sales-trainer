@@ -1,12 +1,8 @@
 import "server-only";
-import { config } from "@/lib/config";
 import { anthropicProvider } from "./anthropicProvider";
-import { openaiProvider } from "./openaiProvider";
 
-// The app talks to the AI through this one interface, so the model vendor can be swapped with a setting.
-// Claude is the intended provider (the prompts and rubric are tuned for it). OpenAI is supported so the app
-// can be tried before Anthropic API access is sorted. Pick with LLM_PROVIDER=anthropic|openai in .env.local,
-// or "provider" in config/ai.json.
+// The app talks to the AI through this one interface. Claude (Anthropic) is the provider. Keeping the interface means
+// another vendor could be added later without touching the call flow or the scorer.
 
 export interface ChatMsg {
   role: "user" | "assistant";
@@ -47,7 +43,7 @@ export interface ScoreResponse {
 }
 
 export interface LlmProvider {
-  readonly name: "anthropic" | "openai";
+  readonly name: "anthropic";
   streamProspect(req: ProspectRequest): Promise<ProspectResponse>;
   scoreJson(req: ScoreRequest): Promise<ScoreResponse>;
 }
@@ -59,8 +55,5 @@ export class RefusalError extends Error {
 }
 
 export function getProvider(): LlmProvider {
-  const name = (process.env.LLM_PROVIDER ?? config.ai.provider).toLowerCase();
-  if (name === "openai") return openaiProvider;
-  if (name === "anthropic") return anthropicProvider;
-  throw new Error(`Unknown LLM_PROVIDER "${name}". Use "anthropic" or "openai".`);
+  return anthropicProvider;
 }

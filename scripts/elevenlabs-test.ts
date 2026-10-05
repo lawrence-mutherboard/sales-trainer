@@ -18,7 +18,6 @@ M._load = function (request: unknown, ...rest: unknown[]) {
 
 async function main() {
   if (!process.env.ELEVENLABS_API_KEY) throw new Error("ELEVENLABS_API_KEY is empty in .env.local");
-  process.env.TTS_BACKEND = "elevenlabs";
   const { pickElevenVoice, streamElevenLabsSpeech, voiceSettings } = await import("../src/lib/ai/elevenlabs");
 
   const cases = [

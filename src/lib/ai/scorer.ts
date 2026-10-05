@@ -181,7 +181,7 @@ The call ended because: ${session.ended_by ?? "unknown"}.
 # Transcript
 ${transcriptText(turns)}`;
 
-  // The vendor (Claude or OpenAI) is chosen by getProvider(); this file only cares about the JSON coming back.
+  // The AI provider is chosen by getProvider(); this file only cares about the JSON coming back.
   const response = await getProvider().scoreJson({ system: SYSTEM_PROMPT, user: userText, schema: OUTPUT_JSON_SCHEMA });
 
   if (response.refused) throw new RefusalError(response.refusalCategory);
