@@ -28,7 +28,8 @@ The app uses two services, and nothing else:
 | Service | What it does here |
 |---|---|
 | **Claude** (Anthropic) | Writes the prospect's replies and scores the call |
-| **ElevenLabs** | Speaks the prospect's voice, and transcribes what you say accurately |
+| **ElevenLabs** | Speaks the prospect's voice |
+| **OpenAI** (optional) | Transcribes what you say accurately (only that, nothing else) |
 
 ### Claude (Anthropic) key
 1. Go to https://console.anthropic.com and sign in (or create an account).
@@ -42,7 +43,7 @@ You'll paste it into `.env.local` as `ANTHROPIC_API_KEY`.
 1. Sign in at https://elevenlabs.io. The plan must allow API use, and commercial use if the team will use the app for work.
 2. In the left menu go to **Developers → API Keys**, and create (or edit) a key. Give it these permissions, or turn the key's restriction off: **Text to Speech**, **Voices (Read)** and **Speech to Text**.
 3. Paste it into `.env.local` as `ELEVENLABS_API_KEY`.
-4. Check it works: `npm run elevenlabs:voices` lists your voices, and `npm run test:elevenlabs` and `npm run test:scribe` test the voice and the transcription.
+4. Check it works: `npm run elevenlabs:voices` lists your voices, and `npm run test:elevenlabs` tests the voice.
 
 ---
 
@@ -101,7 +102,8 @@ Fill in `.env.local`:
 | `ANTHROPIC_WORKSPACE_ID` | Only if Anthropic says the key isn't tied to a workspace | No |
 | `ELEVENLABS_API_KEY` | From step 1 | Yes |
 | `NEXT_PUBLIC_TTS_PROVIDER` | `elevenlabs` for the prospect's ElevenLabs voice, or blank for the free (robotic) browser voice | No |
-| `NEXT_PUBLIC_STT_PROVIDER` | `elevenlabs` for accurate speech recognition (ElevenLabs Scribe), or blank for Chrome only | No |
+| `NEXT_PUBLIC_STT_PROVIDER` | `openai` for accurate speech recognition (needs `OPENAI_API_KEY`), or blank for Chrome only | No |
+| `OPENAI_API_KEY` | Used only to transcribe what the rep says | Only with `openai` above |
 | `NEXT_PUBLIC_SUPABASE_URL` | From step 2.6 | No |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From step 2.6 | No (public by design) |
 | `SUPABASE_SERVICE_ROLE_KEY` | From step 2.6 | **Yes, server only** |
@@ -180,7 +182,7 @@ Restart `npm run dev` (or it hot-reloads) after editing, and run `npm run check-
 |---|---|---|
 | **Natural voice** | The prospect's speech comes from an ElevenLabs voice instead of the browser's, streamed so it starts quickly. The voice (gender and accent) is chosen from the prospect's name and stays the same all call. Turn on with `NEXT_PUBLIC_TTS_PROVIDER=elevenlabs` in `.env.local`. Choose favourite voices by pasting their IDs into `tts.elevenlabs.voices` (run `npm run elevenlabs:voices` to see yours); if the lists are empty the app picks matching voices from your account. | `config/ai.json → tts.elevenlabs` |
 | **How it is spoken** | Each reply is spoken as the first sentence as soon as it is ready and the rest as one piece (`tts.speak_mode: "first_then_rest"`; `"whole"` is smoothest but slowest to start, `"sentences"` is quickest). `tts.speed` sets the pace (ElevenLabs allows 0.7 to 1.2). Numbers and names are tidied for speech ("£160" becomes "160 pounds"). | `config/ai.json → tts` |
-| **Accurate speech recognition** | Your microphone is recorded (in memory only) and each turn is re-transcribed by ElevenLabs Scribe (`stt.model_id`) with a vocabulary hint, so it understands context ("bad time", not "bed time"; "mutherboard", not "motherboard"). Chrome still shows the live captions and spots when you stop talking; the transcription starts while you pause, so it adds little delay. If it's slow (over 3.5 s) or looks wrong, Chrome's text is used. Turn on with `NEXT_PUBLIC_STT_PROVIDER=elevenlabs`; delete the line for Chrome only. Add your own terms to `stt.vocabulary` (ElevenLabs charges a small extra for these hints; set `stt.use_keyterms` to false to stop). **Privacy: your voice now goes to Google (Chrome) and ElevenLabs. Update your privacy notice and data agreements accordingly.** | `config/ai.json → stt`, `config/speech_corrections.json` |
+| **Accurate speech recognition** | Your microphone is recorded (in memory only) and each turn is re-transcribed by OpenAI (`stt.model`) with a vocabulary hint, so it understands context ("bad time", not "bed time"; "mutherboard", not "motherboard"). Chrome still shows the live captions and spots when you stop talking; the transcription starts while you pause, so it adds little delay. If it's slow (over 3.5 s) or looks wrong, Chrome's text is used. Turn on with `NEXT_PUBLIC_STT_PROVIDER=elevenlabs`; delete the line for Chrome only. Add your own terms to `stt.vocabulary` (ElevenLabs charges a small extra for these hints; set `stt.use_keyterms` to false to stop). **Privacy: your voice now goes to Google (Chrome) and ElevenLabs. Update your privacy notice and data agreements accordingly.** | `config/ai.json → stt`, `config/speech_corrections.json` |
 | **Personality and mood in the voice** | Every reply starts with a hidden mood tag (`{impatient}`, `{warm}`, ...). The voice follows it by becoming steadier or more animated, on top of a baseline for each personality (uninterested = flatter). It never changes which voice it is. | `tts.elevenlabs.moods`, `tts.elevenlabs.personalities` |
 | **Staying in role** | A firm "you are the customer" section, a role reminder on every turn, and short example replies. Add an example whenever you catch the prospect getting something wrong. | `config/roleplay_examples.json` |
 | **Accent mix** | Each prospect speaks with a fixed accent for the whole call, chosen at random: about 80% British, 20% American (`tts.accent.uk_percent`). British prospects use British ElevenLabs voices and American ones use American voices. | `config/ai.json → tts.accent` |

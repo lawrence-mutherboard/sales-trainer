@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { CriterionResult, KeyMoment, ScoreResult, SessionRow, TurnRow } from "@/lib/types";
+import type { ScoreResult, SessionRow, TurnRow } from "@/lib/types";
 import { ReportView } from "./ReportView";
 import { RetryScenarioButton } from "./RetryScenarioButton";
 import { ScoreRetry } from "./ScoreRetry";
@@ -10,7 +10,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
 
-  const { data: sessionData } = await supabase.from(TABLES.sessions).select("*").eq("id", id).maybeSingle();
+  const { data: sessionData, error: sessionError } = await supabase.from(TABLES.sessions).select("*").eq("id", id).maybeSingle();
+  if (sessionError) console.error(`report page: could not read the session from the database: ${sessionError.message} (code ${sessionError.code}). If this says "permission denied", the table needs the grants in supabase/grants.sql.`);
   if (!sessionData) notFound();
   const session = sessionData as unknown as SessionRow;
 

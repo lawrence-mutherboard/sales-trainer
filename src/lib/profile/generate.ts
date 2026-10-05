@@ -35,7 +35,7 @@ export function generateProspect(input: {
   difficulty: Difficulty;
   scenario: ScenarioKey;
 }): GeneratedProspect {
-  const { personas, objections } = config;
+  const { personas } = config;
   const size = personas.company_sizes[input.companySize];
   const dept = personas.departments[input.department];
   const names = personas.name_pools;

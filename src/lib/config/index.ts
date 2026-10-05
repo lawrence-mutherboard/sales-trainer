@@ -10,6 +10,7 @@ import rubricJson from "../../../config/rubric.json";
 import examplesJson from "../../../config/roleplay_examples.json";
 import correctionsJson from "../../../config/speech_corrections.json";
 import silenceJson from "../../../config/silence.json";
+import callJson from "../../../config/call.json";
 import listeningJson from "../../../config/listening.json";
 import benchmarksJson from "../../../config/benchmarks.json";
 
@@ -54,8 +55,8 @@ const business = z.object({
 
 const ai = z.object({
   stt: z.object({
-    model_id: z.string(),
-    use_keyterms: z.boolean(),
+    model: z.string(),
+    prompt: z.string(),
     vocabulary: z.array(z.string()),
   }),
   tts: z.object({
@@ -84,6 +85,7 @@ const ai = z.object({
     thinking: z.enum(["between_tools", "none"]),
     max_tokens: z.number(),
   }),
+  tidy: z.object({ enabled: z.boolean(), model: z.string() }),
   scorer: z.object({
     model: z.string(),
     effort: z.enum(["low", "medium", "high", "xhigh", "max"]),
@@ -242,12 +244,17 @@ const silence = z.object({
   }),
 });
 
+const call = z.object({
+  ring: z.object({ enabled: z.boolean(), min_rings: z.number().int().min(1), max_rings: z.number().int().min(1), volume: z.number().min(0).max(1) }),
+});
+
 const examples = z.object({
   examples: z.array(z.object({ rep: z.string(), customer: z.string(), mood: z.string() })),
 });
 
 export const config = {
   silence: silence.parse(silenceJson),
+  call: call.parse(callJson),
   benchmarks: z
     .object({
       sources: z.array(z.object({ label: z.string(), url: z.string() })),

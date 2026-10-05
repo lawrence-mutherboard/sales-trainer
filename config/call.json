@@ -1,0 +1,4 @@
+{
+  "_help": "What happens when the rep presses Start call. The phone rings before the prospect answers, like a real cold call. rings is picked at random between min_rings and max_rings. Set enabled to false to skip the ringing. volume is 0 to 1. The ring style (British double ring or American single ring) follows the prospect's accent.",
+  "ring": { "enabled": true, "min_rings": 2, "max_rings": 3, "volume": 0.18 }
+}
