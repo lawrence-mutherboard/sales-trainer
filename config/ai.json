@@ -34,7 +34,7 @@
   "tts": {
     "_help": "Natural prospect voice, used when NEXT_PUBLIC_TTS_PROVIDER=openai in .env.local (needs OPENAI_API_KEY). Otherwise the free browser voice is used. 'instructions' steers tone and accent (gpt-4o-mini-tts only).",
     "model": "gpt-4o-mini-tts",
-    "speed": 1.13,
+    "speed": 1.1,
     "voices": {
       "feminine": [
         "coral",

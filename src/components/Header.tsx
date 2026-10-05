@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { SignOutButton } from "./SignOutButton";
 
 export async function Header() {
   const supabase = await createSupabaseServerClient();
@@ -22,11 +23,7 @@ export async function Header() {
               My calls
             </Link>
             <span className="hidden text-slate-400 sm:inline">{user.email}</span>
-            <form action="/auth/signout" method="post">
-              <button className="rounded-md border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-100" type="submit">
-                Sign out
-              </button>
-            </form>
+            <SignOutButton />
           </nav>
         )}
       </div>
