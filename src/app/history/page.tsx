@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { SessionRow } from "@/lib/types";
+import { TABLES } from "@/lib/db/tables";
 
 type Row = SessionRow & { scores: { total: number; pass: boolean }[] | { total: number; pass: boolean } | null };
 
@@ -9,8 +10,8 @@ export default async function HistoryPage() {
 
   // RLS limits this to the signed-in rep's own calls.
   const { data } = await supabase
-    .from("sessions")
-    .select("*, scores(total, pass)")
+    .from(TABLES.sessions)
+    .select(`*, scores:${TABLES.scores}(total, pass)`)
     .in("status", ["ended", "scored", "score_failed"])
     .order("started_at", { ascending: false })
     .limit(100);

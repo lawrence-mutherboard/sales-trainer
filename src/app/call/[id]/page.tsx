@@ -5,13 +5,14 @@ import { getSetupOptions } from "@/lib/config/public";
 import { pickPortrait } from "@/lib/portrait";
 import type { SessionRow } from "@/lib/types";
 import { CallClient } from "./CallClient";
+import { TABLES } from "@/lib/db/tables";
 
 export default async function CallPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
 
   // Row-level security: this only returns the signed-in rep's own sessions. No hidden profile is in this table.
-  const { data } = await supabase.from("sessions").select("*").eq("id", id).maybeSingle();
+  const { data } = await supabase.from(TABLES.sessions).select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const session = data as unknown as SessionRow;
 

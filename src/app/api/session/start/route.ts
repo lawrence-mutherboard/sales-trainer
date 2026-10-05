@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { DEPARTMENTS, DIFFICULTIES, PERSONALITIES, SIZES, config } from "@/lib/config";
-import { requireUser } from "@/lib/api/auth";
+import { ensureProfile, requireUser } from "@/lib/api/auth";
 import { generateProspect } from "@/lib/profile/generate";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { TABLES } from "@/lib/db/tables";
 
 const Body = z.object({
   company_size: z.enum(SIZES),
@@ -17,6 +18,8 @@ const Body = z.object({
 export async function POST(req: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
+
+  await ensureProfile(auth.user);
 
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid settings" }, { status: 400 });
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
 
   const db = supabaseAdmin();
   const { data: session, error } = await db
-    .from("sessions")
+    .from(TABLES.sessions)
     .insert({
       rep_id: auth.user.id,
       company_size: b.company_size,
@@ -55,11 +58,11 @@ export async function POST(req: Request) {
   }
 
   const { error: secretError } = await db
-    .from("session_secrets")
+    .from(TABLES.secrets)
     .insert({ session_id: (session as { id: string }).id, hidden_profile: prospect.secrets });
   if (secretError) {
     console.error("start: insert secrets failed", secretError);
-    await db.from("sessions").delete().eq("id", (session as { id: string }).id);
+    await db.from(TABLES.sessions).delete().eq("id", (session as { id: string }).id);
     return NextResponse.json({ error: "Couldn't create the session" }, { status: 500 });
   }
 

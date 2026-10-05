@@ -2,7 +2,7 @@
 
 The prototype lets a rep pick a scenario, hold a voice call with an AI prospect (cold call or discovery), and get a scored report. This guide takes you from nothing to a running app on your own machine.
 
-**Cost:** Supabase, Google Cloud sign-in and local development are free. The only cost is Claude API usage, which is pay-as-you-go (estimated below).
+**Cost:** Supabase and local development are free. The only cost is Claude API usage, which is pay-as-you-go (estimated below).
 
 ---
 
@@ -53,8 +53,8 @@ You'll paste it into `.env.local` as `ANTHROPIC_API_KEY`.
 3. **Region: London (eu-west-2)**, for UK data residency.
 4. When the project is ready, open **SQL Editor → New query**.
 5. Open `supabase/migrations/0001_init.sql` from this project, paste the whole file in, and press **Run**.
-   - It creates the tables, row-level security and the 90-day cleanup job.
-   - If you see a notice about `pg_cron`, go to **Database → Extensions**, enable **pg_cron**, then run the last `do $$ ... $$;` block of the file again.
+   - It creates the trainer tables (all named `trainer_...`, so it can share a project with other tables) and the row-level security rules. It only creates; it never changes anything already in the project.
+   - The 90-day clean-up is a commented-out block at the end of the file. Enable **Database, then Extensions, then pg_cron**, remove the leading `--` from that block, and run it on its own.
 6. Get your keys from **Project Settings → API**:
    - **Project URL** for `NEXT_PUBLIC_SUPABASE_URL`
    - **anon public key** for `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -62,26 +62,24 @@ You'll paste it into `.env.local` as `ANTHROPIC_API_KEY`.
 
 ---
 
-## 3. Google sign-in (restricted to mutherboard.com)
+## 3. Sign-in: work email + password (restricted to mutherboard.com)
 
-### 3a. Google Cloud OAuth client
-1. Go to https://console.cloud.google.com and create a project (for example `sales-trainer`). Use your mutherboard.com Google account.
-2. **APIs & Services → OAuth consent screen**.
-   - User type: **Internal** if your mutherboard.com Google account is a Google Workspace organisation. This blocks anyone outside the company at Google's end. Otherwise choose External.
-   - Fill in the app name (`Sales Trainer`) and your support email, then save.
-3. **APIs & Services → Credentials → Create credentials → OAuth client ID**.
-   - Application type: **Web application**.
-   - **Authorised redirect URIs**: add `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`. You can copy the exact URL from Supabase in step 3b.
-4. Copy the **Client ID** and **Client secret**.
+People create an account with their `@mutherboard.com` email and a password. Supabase stores only a scrambled (hashed) version of the password; the app never sees it. Accounts belong to the Supabase project, not to anyone's personal Google account, so access doesn't depend on any one person.
 
-### 3b. Turn it on in Supabase
-1. **Authentication → Providers → Google**: enable it and paste the Client ID and Client secret. The callback URL shown here is the one to put in Google (step 3a.3).
-2. **Authentication → URL Configuration**:
-   - **Site URL**: `http://localhost:3000`
-   - **Redirect URLs**: add `http://localhost:3000/auth/callback`
-   - When you deploy, add your live address and `/auth/callback` too.
+In Supabase:
+1. **Authentication, then Sign In / Providers, then Email**: make sure it is **enabled** and **Confirm email** is **ON**. **Keep it on.** It proves that a person really owns the mailbox. Without it, anyone could register as `someone@mutherboard.com`. If this project is shared with other things, this setting applies to all of them, so check with whoever manages it before changing anything.
+2. On the same page set **Minimum password length** to **10** (the app also checks this).
+3. **Authentication, then URL Configuration**:
+   - **Site URL**: your Render address (or `http://localhost:3000` while testing locally)
+   - **Redirect URLs**: add `https://your-app.onrender.com/**` and `http://localhost:3000/**`
 
-The domain restriction is enforced three times: Google's consent screen (if Internal), the app's sign-in callback, and a database rule that refuses to create any non-`@mutherboard.com` account.
+How it works: a person clicks **Create an account**, enters their name, work email and password, and receives a confirmation email. After clicking the link they sign in with email and password. **Forgot password?** sends a reset link.
+
+**How the company-email rule is enforced.** Because the Supabase project may be shared, there is no database trigger. The app itself refuses anyone whose email is not on the company domain *or* is not confirmed: on every page, every API call, and when an email link is opened. The sign-up form also checks the domain. Someone outside the company who registers directly with Supabase can create an account there but cannot use this app.
+
+**Email sending.** Supabase's built-in sender is meant for testing and allows only a handful of emails per hour. Before the whole team signs up, set up proper email sending under **Project Settings, then Authentication, then SMTP Settings** (or check whether the company project already has it). The confirmation and reset emails use the project's email templates, which may be shared with other apps.
+
+To add a person by hand for testing: **Authentication, then Users, then Add user**, ticking **Auto Confirm User**.
 
 ---
 
@@ -108,6 +106,7 @@ Fill in `.env.local`:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | From step 2.6 | No (public by design) |
 | `SUPABASE_SERVICE_ROLE_KEY` | From step 2.6 | **Yes, server only** |
 | `ALLOWED_EMAIL_DOMAIN` | `mutherboard.com` | No |
+| `NEXT_PUBLIC_ALLOWED_EMAIL_DOMAIN` | `mutherboard.com` (same as the line above; used by the sign-up form) | No |
 | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | No |
 
 `.env.local` is in `.gitignore`. Never commit it.
@@ -136,11 +135,11 @@ New accounts are reps. In Supabase **SQL Editor**:
 
 ```sql
 -- make someone a manager
-update public.profiles set role = 'manager' where email = 'someone@mutherboard.com';
+update public.trainer_profiles set role = 'manager' where email = 'someone@mutherboard.com';
 
 -- put a rep on that manager's team
-update public.profiles
-   set manager_id = (select id from public.profiles where email = 'someone@mutherboard.com')
+update public.trainer_profiles
+   set manager_id = (select id from public.trainer_profiles where email = 'someone@mutherboard.com')
  where email = 'rep@mutherboard.com';
 ```
 
@@ -232,10 +231,10 @@ These are estimates, not measurements. After your first few calls, check real sp
    - `SITE_URL` = your Render address, for example `https://your-app.onrender.com`
    - `NEXT_PUBLIC_SITE_URL` = the same address
    - Variables starting with `NEXT_PUBLIC_` are baked into the build. After changing one, use **Manual Deploy, then Clear build cache and deploy**.
-4. **Supabase, Authentication, URL Configuration** (this is the usual cause of being sent back to localhost after Google sign-in):
+4. **Supabase, Authentication, URL Configuration** (this is the usual cause of being sent back to localhost after clicking a link in an email):
    - **Site URL** = your Render address (not `http://localhost:3000`)
    - **Redirect URLs**: add `https://your-app.onrender.com/auth/callback`. Keep the localhost one too for local testing.
-5. Google Cloud needs no change: its redirect address is Supabase's, not Render's.
+5. Make sure **Confirm email** is ON in Supabase (section 3) before sharing the link.
 6. Free Render instances **sleep after about 15 minutes idle**; the first visit afterwards takes about a minute. Set spending limits with Anthropic and ElevenLabs before sharing the link.
 
 ---
@@ -257,8 +256,10 @@ These are estimates, not measurements. After your first few calls, check real sp
 
 | Symptom | Likely cause |
 |---|---|
-| Sign-in bounces back with "Only mutherboard.com accounts" | Signed in with a non-company Google account |
-| `redirect_uri_mismatch` from Google | The Supabase callback URL isn't in Google's Authorised redirect URIs (step 3a.3) |
+| "Only mutherboard.com email addresses can use this app" | You used a non-company email |
+| "Please confirm your email first" | Click the link in the confirmation email (check spam), or add the user by hand in Supabase with Auto Confirm |
+| No confirmation email arrives | Supabase's built-in sender is rate-limited. Wait, set up your own SMTP (section 3), or create the user by hand |
+| The email link says "That link didn't work" | Open it in the same browser you signed up in. If you already clicked it, just sign in with your password |
 | "Couldn't create the session" | Migration not run, or wrong `SUPABASE_SERVICE_ROLE_KEY` |
 | Prospect never answers | Check the terminal running `npm run dev` for an Anthropic error (billing, wrong key, unknown model) |
 | Nothing happens when you talk | Mic blocked (padlock in the address bar), or not using Chrome/Edge |
