@@ -7,6 +7,7 @@ import { applyCorrections, type Correction } from "@/lib/voice/corrections";
 import type { TurnTimingConfig } from "@/lib/voice/turnTiming";
 import { pickAccent } from "@/lib/voice/accent";
 import { playRingback, type Ringback } from "@/lib/voice/ring";
+import { startAmbience, type Ambience } from "@/lib/voice/ambience";
 import { browserVoiceSupported, createVoiceAdapter, type VoiceAdapter, type VoiceMode } from "@/lib/voice";
 
 interface Props {
@@ -36,6 +37,7 @@ export interface RingConfig {
   maxRings: number;
   volume: number;
   ukPercent: number;
+  ambience: { enabled: boolean; volume: number; onlyWithHeadphones: boolean };
 }
 
 export interface SilenceConfig {
@@ -103,6 +105,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   const [ringing, setRinging] = useState(false);
   const ringingRef = useRef(false);
   const ringRef = useRef<Ringback | null>(null);
+  const ambienceRef = useRef<Ambience | null>(null);
   /** The prospect's first words wait for this (the ringing) before they are spoken. */
   const gateRef = useRef<Promise<void>>(Promise.resolve());
   /** True while one of the prospect's "are you still there?" lines is being spoken. */
@@ -155,6 +158,8 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       latest.current.cancelSilence();
       unsubsRef.current.forEach((u) => u());
       adapterRef.current?.stop();
+      ringRef.current?.stop();
+      ambienceRef.current?.stop();
     };
   }, []);
 
@@ -168,6 +173,8 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       latest.current.cancelSilence();
       const durationMs = now();
       adapterRef.current?.stop();
+      ambienceRef.current?.stop();
+      ambienceRef.current = null;
       unsubsRef.current.forEach((u) => u());
       unsubsRef.current = [];
 
@@ -540,6 +547,9 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         setRinging(false);
       }
       t0Ref.current = performance.now(); // the call clock starts when the prospect picks up
+      if (m === "voice" && ring.ambience.enabled && (headphonesRef.current || !ring.ambience.onlyWithHeadphones)) {
+        ambienceRef.current = startAmbience(ring.ambience.volume);
+      }
       setPhase("live");
       if (!rings) void requestReply({}); // the prospect answers the phone first
     },

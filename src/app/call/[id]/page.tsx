@@ -60,6 +60,11 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
         maxRings: Math.max(config.call.ring.min_rings, config.call.ring.max_rings),
         volume: config.call.ring.volume,
         ukPercent: config.ai.tts.accent.uk_percent,
+        ambience: {
+          enabled: config.call.ambience.enabled,
+          volume: config.call.ambience.volume,
+          onlyWithHeadphones: config.call.ambience.only_with_headphones,
+        },
       }}
       silence={{
         enabled: config.silence.enabled,

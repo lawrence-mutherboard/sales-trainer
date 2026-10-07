@@ -55,6 +55,7 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
       prev={prev}
       footer={
         <RetryScenarioButton
+          sessionId={session.id}
           settings={{
             company_size: session.company_size,
             department: session.department,

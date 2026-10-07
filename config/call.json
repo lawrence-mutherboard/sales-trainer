@@ -1,4 +1,27 @@
 {
-  "_help": "What happens when the rep presses Start call. The phone rings before the prospect answers, like a real cold call. rings is picked at random between min_rings and max_rings. Set enabled to false to skip the ringing. volume is 0 to 1. The ring style (British double ring or American single ring) follows the prospect's accent.",
-  "ring": { "enabled": true, "min_rings": 2, "max_rings": 3, "volume": 0.18 }
+  "_help": "What happens when the rep presses Start call. ring: the phone rings before the prospect answers, like a real cold call (rings is picked between min_rings and max_rings; volume 0 to 1; the ring style follows the prospect's accent). ambience: a faint office background hum during the call; only_with_headphones keeps it off when the rep uses speakers, so the microphone does not hear it. pickup_styles: how the prospect answers a COLD CALL; one is chosen at random per call, and each note replaces the default opening for that call. Add or edit styles freely (id is just a label).",
+  "ring": { "enabled": true, "min_rings": 2, "max_rings": 3, "volume": 0.18 },
+  "ambience": { "enabled": true, "volume": 0.035, "only_with_headphones": true },
+  "pickup_styles": [
+    {
+      "id": "neutral",
+      "note": "Your very first line is just \"Hello?\" or \"Hi there?\" in a neutral, slightly curious tone."
+    },
+    {
+      "id": "brisk",
+      "note": "You are busy and answer abruptly. Your very first line is only \"Yeah?\" or \"Yep, go ahead?\" or \"Hello, yeah?\". Short and a bit clipped."
+    },
+    {
+      "id": "wary",
+      "note": "You don't recognise the number. Your very first line is \"Hello?\" and, if the rep does not say who they are within a few words, your next line is a wary \"Sorry, who's this?\"."
+    },
+    {
+      "id": "desk",
+      "note": "You are answering at your desk. Your very first line is a work greeting giving only your first name and company, for example \"Good morning, {company}, {first_name} speaking.\" or \"{first_name} speaking.\". This is the only time you may say your name or company in your first line. Never say your job title, and never ask who is calling in that first line."
+    },
+    {
+      "id": "distracted",
+      "note": "You answer while doing something else. Your very first line is \"Hello?\" or \"Hi, sorry — hello?\" and you sound slightly distracted until the rep gives you a reason to focus."
+    }
+  ]
 }
