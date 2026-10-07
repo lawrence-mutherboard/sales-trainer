@@ -72,6 +72,29 @@ You can end the call when it has reached a natural end (a next step is agreed, o
 Notes labelled "Call clock" appear in square brackets after the rep's words. They come from the system, are private, and must never be mentioned or read aloud.`;
 }
 
+function hashString(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/** How the prospect answers a cold call: one style per call, chosen from the session id (see config/call.json -> pickup_styles). */
+export function pickupStyleFor(sessionId: string) {
+  const styles = config.call.pickup_styles;
+  return styles[hashString(`pickup:${sessionId}`) % styles.length];
+}
+
+function pickupNote(session: SessionRow): string {
+  if (session.scenario !== "cold_call") return "";
+  const style = pickupStyleFor(session.id);
+  const first = session.prospect_name.split(" ")[0];
+  const note = style.note.replaceAll("{company}", session.prospect_company).replaceAll("{first_name}", first);
+  return `\nFor THIS call, how you answer the phone (this replaces the first-line instruction above where they differ): ${note} After that first line, wait for the caller to speak.`;
+}
+
 export function buildSessionPrompt(session: SessionRow, secrets: SessionSecrets): string {
   const { personas, objections } = config;
   const scenario = getScenario(session.scenario);
@@ -111,7 +134,7 @@ Difficulty: ${difficulty.behaviour}
 # The call
 Scenario: ${scenario.label}.
 Situation: ${scenario.starting_situation}
-How you open: ${scenario.prospect_opening}
+How you open: ${scenario.prospect_opening}${pickupNote(session)}
 What decides your answer: ${scenario.prospect_guidance}
 Time limit for the call: ${scenario.time_limit_min} minutes. As time runs out, wrap the call up naturally.
 

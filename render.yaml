@@ -26,6 +26,8 @@ services:
         sync: false
       - key: ALLOWED_EMAIL_DOMAIN
         value: mutherboard.com
+      - key: NEXT_PUBLIC_ALLOWED_EMAIL_DOMAIN
+        value: mutherboard.com
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: ANTHROPIC_WORKSPACE_ID
@@ -35,4 +37,6 @@ services:
       - key: NEXT_PUBLIC_STT_PROVIDER
         sync: false
       - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
         sync: false

@@ -1,9 +1,9 @@
 {
-  "_help": "Claude (Anthropic) writes the prospect's replies and scores the call; ElevenLabs speaks the prospect's voice and transcribes what the rep says. The 'prospect', 'scorer' and 'refusal_fallback' blocks apply to Claude.",
+  "_help": "Claude (Anthropic) writes the prospect's replies and scores the call; ElevenLabs speaks the prospect's voice, and OpenAI transcribes what the rep says (Chrome gives the live captions). The 'prospect', 'scorer' and 'refusal_fallback' blocks apply to Claude.",
   "stt": {
-    "_help": "Accurate speech-to-text for what the rep says, using ElevenLabs Scribe, used when NEXT_PUBLIC_STT_PROVIDER=elevenlabs in .env.local. Chrome still gives the live captions and spots when you stop talking; each turn is then re-transcribed from the recording. use_keyterms sends the vocabulary below as hints (ElevenLabs charges a small extra for this).",
-    "model_id": "scribe_v2",
-    "use_keyterms": true,
+    "_help": "Accurate speech-to-text for what the rep says, used when NEXT_PUBLIC_STT_PROVIDER=openai in .env.local (needs OPENAI_API_KEY). Chrome still gives the live captions and spots when you stop talking; each turn is then re-transcribed from the recording. gpt-4o-mini-transcribe is cheaper and quicker but a little less accurate than gpt-4o-transcribe.",
+    "model": "gpt-4o-transcribe",
+    "prompt": "This is a UK business phone call. A salesperson from a company called mutherboard, a monday.com partner, is talking to a prospect about project management, CRM and workflow software. Transcribe exactly what was said, word for word: keep filler words such as um, uh, erm, you know and false starts, and do not tidy up the speech.",
     "vocabulary": [
       "mutherboard",
       "monday.com",
@@ -24,7 +24,7 @@
   },
   "tts": {
     "_help": "The prospect's voice comes from ElevenLabs (see the 'elevenlabs' block). speed is the pace (ElevenLabs allows 0.7 to 1.2). accent.uk_percent is the share of prospects with a British accent; the rest are American. moods are the labels the AI uses to show how the prospect feels; mood_speed nudges the pace for each. speak_mode: whole | first_then_rest | sentences.",
-    "speed": 1.1,
+    "speed": 1.05,
     "accent": {
       "uk_percent": 80
     },
@@ -126,6 +126,11 @@
     "thinking": "between_tools",
     "max_tokens": 400,
     "note": "To fall back to Haiku if latency is too high: set model to claude-haiku-4-5 and thinking to none."
+  },
+  "tidy": {
+    "enabled": true,
+    "model": "claude-haiku-4-5-20251001",
+    "note": "After a call, a fast model adds punctuation and capitals to what the rep said (words are never changed) before scoring. Set enabled to false to skip."
   },
   "scorer": {
     "model": "claude-opus-5-5",

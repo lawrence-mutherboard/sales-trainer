@@ -2,6 +2,7 @@ import { z } from "zod";
 import { NextResponse } from "next/server";
 import { getOwnedSession, isUuid, requireUser } from "@/lib/api/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { TABLES } from "@/lib/db/tables";
 
 export const runtime = "nodejs";
 
@@ -34,12 +35,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const db = supabaseAdmin();
   await Promise.all(
     timings.map((t) =>
-      db.from("turns").update({ started_ms: t.startedMs, ended_ms: t.endedMs }).eq("session_id", id).eq("idx", t.idx),
+      db.from(TABLES.turns).update({ started_ms: t.startedMs, ended_ms: t.endedMs }).eq("session_id", id).eq("idx", t.idx),
     ),
   );
 
   const { error } = await db
-    .from("sessions")
+    .from(TABLES.sessions)
     .update({ status: "ended", ended_by: endedBy, duration_ms: durationMs, ended_at: new Date().toISOString() })
     .eq("id", id);
   if (error) {

@@ -5,6 +5,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { applyCorrections, type Correction } from "@/lib/voice/corrections";
 import type { TurnTimingConfig } from "@/lib/voice/turnTiming";
+import { pickAccent } from "@/lib/voice/accent";
+import { playRingback, type Ringback } from "@/lib/voice/ring";
+import { startAmbience, type Ambience } from "@/lib/voice/ambience";
 import { browserVoiceSupported, createVoiceAdapter, type VoiceAdapter, type VoiceMode } from "@/lib/voice";
 
 interface Props {
@@ -24,6 +27,17 @@ interface Props {
   corrections: Correction[];
   /** What the prospect does when the rep goes quiet (from config/silence.json). */
   silence: SilenceConfig;
+  /** The ringing before the prospect picks up (from config/call.json). */
+  ring: RingConfig;
+}
+
+export interface RingConfig {
+  enabled: boolean;
+  minRings: number;
+  maxRings: number;
+  volume: number;
+  ukPercent: number;
+  ambience: { enabled: boolean; volume: number; onlyWithHeadphones: boolean };
 }
 
 export interface SilenceConfig {
@@ -72,7 +86,7 @@ function takeSentences(buf: string, final: boolean): { sentences: string[]; rest
   return { sentences, rest };
 }
 
-export function CallClient({ sessionId, interrupted, prospect, scenario, personality, portrait, fillers, speakMode, turnTiming, corrections, silence }: Props) {
+export function CallClient({ sessionId, interrupted, prospect, scenario, personality, portrait, fillers, speakMode, turnTiming, corrections, silence, ring }: Props) {
   const router = useRouter();
 
   const [phase, setPhase] = useState<Phase>("precall");
@@ -88,6 +102,14 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   const [voiceOk, setVoiceOk] = useState(true);
   const [headphones, setHeadphones] = useState(false);
   const headphonesRef = useRef(false);
+  const [ringing, setRinging] = useState(false);
+  const ringingRef = useRef(false);
+  const ringRef = useRef<Ringback | null>(null);
+  const ambienceRef = useRef<Ambience | null>(null);
+  /** The prospect's first words wait for this (the ringing) before they are spoken. */
+  const gateRef = useRef<Promise<void>>(Promise.resolve());
+  /** True while one of the prospect's "are you still there?" lines is being spoken. */
+  const nudgeSpeakingRef = useRef(false);
 
   // Mutable call state lives in refs so async callbacks never see stale values.
   const adapterRef = useRef<VoiceAdapter | null>(null);
@@ -136,6 +158,8 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       latest.current.cancelSilence();
       unsubsRef.current.forEach((u) => u());
       adapterRef.current?.stop();
+      ringRef.current?.stop();
+      ambienceRef.current?.stop();
     };
   }, []);
 
@@ -149,6 +173,8 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       latest.current.cancelSilence();
       const durationMs = now();
       adapterRef.current?.stop();
+      ambienceRef.current?.stop();
+      ambienceRef.current = null;
       unsubsRef.current.forEach((u) => u());
       unsubsRef.current = [];
 
@@ -201,7 +227,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       let fillerTimer: ReturnType<typeof setTimeout> | null = null;
 
       const speakChunk = (text: string) => {
-        if (text.trim()) spoken.push(adapter.speak(text.trim(), mood));
+        if (text.trim()) spoken.push(gateRef.current.then(() => adapter.speak(text.trim(), mood)));
       };
 
       let wholeReply = "";
@@ -380,35 +406,42 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
     const adapter = adapterRef.current;
     if (!adapter || endedRef.current || busyRef.current) return;
 
-    // If the rep has started talking (the mic can hear them before the words are recognised), do not talk over them.
+    // If the rep is talking, or has just finished and their words are still being turned into text, do not nudge them.
     // Look again shortly.
-    if (adapter.isUserSpeaking?.()) {
+    if (adapter.isUserSpeaking?.() || adapter.isTurnPending?.()) {
       silenceTimer.current = setTimeout(() => void fireNudge(stage), 800);
       return;
     }
 
+    if (ringingRef.current) return;
     const kind = stage === 1 ? "first" : stage === 2 ? "second" : "hangup";
     const pool = silence.lines[kind];
     const text = pool[Math.floor(Math.random() * pool.length)];
     const epoch = silenceEpoch.current;
 
     busyRef.current = true; // hold any reply off while the prospect is talking
+    nudgeSpeakingRef.current = true;
     try {
-      const res = await fetch(`/api/session/${sessionId}/nudge`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      if (!res.ok) throw new Error(`nudge ${res.status}`);
-      const { idx } = (await res.json()) as { idx: number };
-      setLines((l) => [...l, { key: ++lineKey.current, speaker: "prospect", text }]);
+      // Speak first, then save it to the transcript, so a rep who starts talking at the last moment doesn't leave a phantom line behind.
       const span = await adapter.speak(text, silence.moods[kind]);
-      timingsRef.current.push({ idx, startedMs: span.startedMs, endedMs: span.endedMs });
+      if (span.endedMs > span.startedMs) {
+        const res = await fetch(`/api/session/${sessionId}/nudge`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        if (!res.ok) throw new Error(`nudge ${res.status}`);
+        const { idx } = (await res.json()) as { idx: number };
+        setLines((l) => [...l, { key: ++lineKey.current, speaker: "prospect", text }]);
+        timingsRef.current.push({ idx, startedMs: span.startedMs, endedMs: span.endedMs });
+      }
     } catch (err) {
       console.warn("Silence follow-up failed", err);
+      nudgeSpeakingRef.current = false;
       busyRef.current = false;
       return; // give up quietly; the next thing the rep does starts things again
     }
+    nudgeSpeakingRef.current = false;
     busyRef.current = false;
     if (endedRef.current || epoch !== silenceEpoch.current) return; // the rep spoke in the meantime
 
@@ -446,8 +479,11 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
 
       unsubsRef.current.push(
         adapter.onInterim((t) => {
+          if (ringingRef.current) return; // still ringing: nobody has picked up yet
           setInterim(t);
           if (t) {
+            // If the rep starts talking over "are you still there?", the prospect stops and listens.
+            if (nudgeSpeakingRef.current) adapter.cancelSpeech();
             // The rep is talking: restart the silence countdown from now.
             latest.current.cancelSilence();
             latest.current.armSilence();
@@ -458,7 +494,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
           setNotice(message);
         }),
         adapter.onUserSpeech((raw) => {
-          if (endedRef.current) return;
+          if (endedRef.current || ringingRef.current) return;
           // Fix words the recogniser often mishears ("bed time" -> "bad time", "motherboard" -> "mutherboard").
           const u = { ...raw, text: applyCorrections(raw.text, corrections) };
           setInterim("");
@@ -493,11 +529,31 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       }
       // Download the short "mm" / "right" fillers in the background so they can play instantly later.
       void adapterRef.current?.prepare(fillers);
+
+      // The phone rings first, as on a real cold call. The prospect's opening line is fetched while it rings, and spoken
+      // as soon as they "pick up".
+      const rings = ring.enabled && m === "voice";
+      if (rings) {
+        const count = ring.minRings + Math.floor(Math.random() * (ring.maxRings - ring.minRings + 1));
+        const rb = playRingback(pickAccent(prospect.name, ring.ukPercent), count, ring.volume);
+        ringRef.current = rb;
+        gateRef.current = rb.done;
+        ringingRef.current = true;
+        setRinging(true);
+        void requestReply({});
+        await rb.done;
+        ringRef.current = null;
+        ringingRef.current = false;
+        setRinging(false);
+      }
       t0Ref.current = performance.now(); // the call clock starts when the prospect picks up
+      if (m === "voice" && ring.ambience.enabled && (headphonesRef.current || !ring.ambience.onlyWithHeadphones)) {
+        ambienceRef.current = startAmbience(ring.ambience.volume);
+      }
       setPhase("live");
-      void requestReply({}); // the prospect answers the phone first
+      if (!rings) void requestReply({}); // the prospect answers the phone first
     },
-    [attachAdapter, requestReply, fillers],
+    [attachAdapter, requestReply, fillers, ring, prospect.name],
   );
 
   // Switch to typing during a call (for example if the mic stops working).
@@ -617,7 +673,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
             disabled={!voiceOk || phase === "connecting"}
             className="rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
           >
-            {phase === "connecting" ? "Connecting…" : "Start call (voice)"}
+            {phase === "connecting" ? (ringing ? "Ringing…" : "Connecting…") : "Start call (voice)"}
           </button>
           <button
             onClick={() => void beginCall("typed")}

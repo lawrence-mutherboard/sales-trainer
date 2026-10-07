@@ -4,6 +4,7 @@ import { config } from "@/lib/config";
 import { isUuid, requireUser } from "@/lib/api/auth";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { SessionRow, TurnRow } from "@/lib/types";
+import { TABLES } from "@/lib/db/tables";
 
 export const runtime = "nodejs";
 
@@ -26,8 +27,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   const db = supabaseAdmin();
   const [sessionRes, lastRes] = await Promise.all([
-    db.from("sessions").select("id, rep_id, status").eq("id", id).maybeSingle(),
-    db.from("turns").select("idx, speaker").eq("session_id", id).order("idx", { ascending: false }).limit(1),
+    db.from(TABLES.sessions).select("id, rep_id, status").eq("id", id).maybeSingle(),
+    db.from(TABLES.turns).select("idx, speaker").eq("session_id", id).order("idx", { ascending: false }).limit(1),
   ]);
   const session = sessionRes.data as Pick<SessionRow, "id" | "rep_id" | "status"> | null;
   if (!session || session.rep_id !== auth.user.id) return NextResponse.json({ error: "Session not found" }, { status: 404 });
@@ -40,7 +41,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (last && last.speaker !== "prospect") return NextResponse.json({ error: "Not waiting for the rep" }, { status: 409 });
 
   const idx = last ? last.idx + 1 : 0;
-  const { error } = await db.from("turns").insert({ session_id: id, idx, speaker: "prospect", text: parsed.data.text });
+  const { error } = await db.from(TABLES.turns).insert({ session_id: id, idx, speaker: "prospect", text: parsed.data.text });
   if (error) {
     console.error("nudge: insert failed", error);
     return NextResponse.json({ error: "Couldn't save" }, { status: 500 });

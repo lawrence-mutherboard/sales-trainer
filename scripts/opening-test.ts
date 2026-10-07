@@ -22,7 +22,7 @@ async function main() {
   const { config } = await import("../src/lib/config/index");
   const { getProvider } = await import("../src/lib/ai/provider");
   const { generateProspect } = await import("../src/lib/profile/generate");
-  const { buildClockNote, buildGlobalPrompt, buildSessionPrompt } = await import("../src/lib/ai/prospectPrompt");
+  const { buildClockNote, buildGlobalPrompt, buildSessionPrompt, pickupStyleFor } = await import("../src/lib/ai/prospectPrompt");
   const provider = getProvider();
   const globalPrompt = buildGlobalPrompt();
 
@@ -34,11 +34,11 @@ async function main() {
   await Promise.all(
     Array.from({ length: 4 }, async () => {
       for (let job = queue.shift(); job; job = queue.shift()) {
-        const sizes = ["smb", "enterprise"] as const;
+        const sizes = ["smb", "mid_market", "enterprise"] as const;
         const depts = ["sales", "operations", "product", "finance"] as const;
-        const p = generateProspect({ companySize: sizes[job.n % 2], department: depts[job.n % 4], difficulty: "medium", scenario: job.scenario });
+        const p = generateProspect({ companySize: sizes[job.n % 3], department: depts[job.n % 4], difficulty: "medium", scenario: job.scenario });
         const session = {
-          id: "x", rep_id: "y", company_size: sizes[job.n % 2], department: depts[job.n % 4], personality: "friendly", scenario: job.scenario,
+          id: `opening-test-${job.n}-${job.scenario}`, rep_id: "y", company_size: sizes[job.n % 3], department: depts[job.n % 4], personality: "friendly", scenario: job.scenario,
           difficulty: "medium", prospect_name: p.name, prospect_title: p.title, prospect_company: p.company, input_mode: "voice" as const,
           status: "ready" as const, ended_by: null, duration_ms: null, started_at: "", ended_at: null,
         };
@@ -52,13 +52,15 @@ async function main() {
         });
         const reply = text.replace(/^\s*\{[^}]*\}\s*/, "").replace("[[END_CALL]]", "").trim();
         const problems: string[] = [];
-        if (reply.split(/\s+/).length > 5) problems.push("longer than a plain greeting");
+        // The "desk" pickup style (cold calls only) is allowed to give a first name and the company.
+        const desk = job.scenario === "cold_call" && pickupStyleFor(session.id).id === "desk";
+        if (reply.split(/\s+/).length > (desk ? 10 : 5)) problems.push("longer than a plain greeting");
         const lower = reply.toLowerCase();
-        if (lower.includes(p.name.split(" ")[0].toLowerCase())) problems.push("says its name");
-        if (lower.includes(p.company.split(" ")[0].toLowerCase())) problems.push("says its company");
-        if (/speaking|who('| i)?s (this|calling)|who is this|how can i help/.test(lower)) problems.push("asks who it is / answers like a receptionist");
+        if (!desk && lower.includes(p.name.split(" ")[0].toLowerCase())) problems.push("says its name");
+        if (!desk && lower.includes(p.company.split(" ")[0].toLowerCase())) problems.push("says its company");
+        if (/who('| i)?s (this|calling)|who is this|how can i help/.test(lower)) problems.push("asks who it is / answers like a receptionist");
         if (!config.ai.tts.moods[(/^\s*\{([a-z]+)\}/i.exec(text)?.[1] ?? "").toLowerCase()]) problems.push("missing {mood} tag");
-        rows.push({ scenario: job.scenario, reply, problems });
+        rows.push({ scenario: job.scenario, reply: `${job.scenario === "cold_call" ? `<${pickupStyleFor(session.id).id}> ` : ""}${reply}`, problems });
       }
     }),
   );

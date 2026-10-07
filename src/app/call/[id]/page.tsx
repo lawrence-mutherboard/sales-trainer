@@ -5,13 +5,15 @@ import { getSetupOptions } from "@/lib/config/public";
 import { pickPortrait } from "@/lib/portrait";
 import type { SessionRow } from "@/lib/types";
 import { CallClient } from "./CallClient";
+import { TABLES } from "@/lib/db/tables";
 
 export default async function CallPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
 
   // Row-level security: this only returns the signed-in rep's own sessions. No hidden profile is in this table.
-  const { data } = await supabase.from("sessions").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from(TABLES.sessions).select("*").eq("id", id).maybeSingle();
+  if (error) console.error(`call page: could not read the session from the database: ${error.message} (code ${error.code}). If this says "permission denied", the table needs the grants in supabase/grants.sql.`);
   if (!data) notFound();
   const session = data as unknown as SessionRow;
 
@@ -52,6 +54,18 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
         unfinishedMs: config.listening.unfinished_ms,
       }}
       corrections={config.speechCorrections}
+      ring={{
+        enabled: config.call.ring.enabled,
+        minRings: config.call.ring.min_rings,
+        maxRings: Math.max(config.call.ring.min_rings, config.call.ring.max_rings),
+        volume: config.call.ring.volume,
+        ukPercent: config.ai.tts.accent.uk_percent,
+        ambience: {
+          enabled: config.call.ambience.enabled,
+          volume: config.call.ambience.volume,
+          onlyWithHeadphones: config.call.ambience.only_with_headphones,
+        },
+      }}
       silence={{
         enabled: config.silence.enabled,
         firstMs: config.silence.first_ms,
