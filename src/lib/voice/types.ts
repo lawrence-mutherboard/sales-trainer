@@ -56,6 +56,8 @@ export interface VoiceAdapter {
   cancelSpeech(): void;
   /** True if the rep is making sound right now (so the prospect should not talk over them). Optional. */
   isUserSpeaking?(): boolean;
+  /** True while the rep's last turn is still being finished or transcribed (so they are not silent). Optional. */
+  isTurnPending?(): boolean;
 }
 
 /** Speaks the prospect's replies. Implemented by the free browser voice and by the natural server voice. */

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { SessionRow } from "@/lib/types";
+import type { ScoreResult, SessionRow } from "@/lib/types";
+import { Progress, type ScoredCall } from "./Progress";
+import { TABLES } from "@/lib/db/tables";
 
 type Row = SessionRow & { scores: { total: number; pass: boolean }[] | { total: number; pass: boolean } | null };
 
@@ -9,17 +11,38 @@ export default async function HistoryPage() {
 
   // RLS limits this to the signed-in rep's own calls.
   const { data } = await supabase
-    .from("sessions")
-    .select("*, scores(total, pass)")
+    .from(TABLES.sessions)
+    .select(`*, scores:${TABLES.scores}(total, pass)`)
     .in("status", ["ended", "scored", "score_failed"])
     .order("started_at", { ascending: false })
     .limit(100);
   const rows = (data ?? []) as unknown as Row[];
 
+  // The detailed results of the last 20 scored calls, for the progress panel.
+  const { data: scoredData } = await supabase
+    .from(TABLES.sessions)
+    .select(`id, scenario, started_at, scores:${TABLES.scores}(result_json)`)
+    .eq("status", "scored")
+    .order("started_at", { ascending: false })
+    .limit(20);
+  const scored: ScoredCall[] = ((scoredData ?? []) as unknown as {
+    id: string;
+    scenario: string;
+    started_at: string;
+    scores: { result_json: ScoreResult }[] | { result_json: ScoreResult } | null;
+  }[])
+    .map((r) => {
+      const s = Array.isArray(r.scores) ? r.scores[0] : r.scores;
+      return s?.result_json ? { id: r.id, scenario: r.scenario, startedAt: r.started_at, result: s.result_json } : null;
+    })
+    .filter((x): x is ScoredCall => x !== null);
+
   return (
     <div>
       <h1 className="text-2xl font-semibold">My calls</h1>
       <p className="mt-1 text-slate-600">Calls are kept for 90 days.</p>
+
+      <Progress calls={scored} />
 
       {rows.length === 0 ? (
         <div className="mt-6 rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -57,7 +80,7 @@ export default async function HistoryPage() {
                       <span className="text-slate-400"> · {r.prospect_company}</span>
                     </td>
                     <td className="hidden px-4 py-3 capitalize text-slate-500 md:table-cell">
-                      {r.company_size} · {r.department} · {r.personality} · {r.difficulty}
+                      {r.company_size.replace("_", "-")} · {r.department} · {r.personality} · {r.difficulty}
                     </td>
                     <td className="px-4 py-3 font-semibold">{score ? `${score.total}/100` : "—"}</td>
                     <td className="px-4 py-3">

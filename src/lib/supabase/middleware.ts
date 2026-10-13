@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { siteOrigin } from "@/lib/siteUrl";
+import { isAllowedUser, refusalReason } from "@/lib/authDomain";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
 
@@ -33,6 +34,13 @@ export async function updateSession(request: NextRequest) {
     if (path.startsWith("/api/")) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
     // Build the address from the public site address, not the internal one the host may show us.
     return NextResponse.redirect(`${siteOrigin(request)}/login`);
+  }
+
+  // Signed in, but not a confirmed company address (for example someone who registered straight with the sign-up
+  // service). They can't use any page or API; the login page then signs them out.
+  if (user && !isAllowedUser(user) && !isPublic) {
+    if (path.startsWith("/api/")) return NextResponse.json({ error: "Account not allowed" }, { status: 403 });
+    return NextResponse.redirect(`${siteOrigin(request)}/login?error=${refusalReason(user)}`);
   }
   return response;
 }

@@ -1,8 +1,11 @@
 {
   "company_sizes": {
     "smb": {
-      "label": "SMB (10–200 staff)",
-      "staff_range": [10, 200],
+      "label": "SMB (10–199 staff)",
+      "staff_range": [
+        10,
+        199
+      ],
       "behaviour": "Decides with one or two people and moves fast. Price-sensitive. Little formal process. Doesn't have a dedicated IT or procurement team.",
       "decision_makers": [
         "Themselves - they can sign this off alone",
@@ -10,9 +13,18 @@
         "A quick joint decision between themselves and the {boss}"
       ],
       "budget_ranges": [
-        { "range": "£3,000–£6,000", "approved_probability": 0.6 },
-        { "range": "£6,000–£12,000", "approved_probability": 0.5 },
-        { "range": "£10,000–£20,000", "approved_probability": 0.35 }
+        {
+          "range": "£3,000–£6,000",
+          "approved_probability": 0.6
+        },
+        {
+          "range": "£6,000–£12,000",
+          "approved_probability": 0.5
+        },
+        {
+          "range": "£10,000–£20,000",
+          "approved_probability": 0.35
+        }
       ],
       "timelines": [
         "Wants something running within 6 weeks; will decide in the next two weeks",
@@ -20,9 +32,44 @@
         "No hard deadline, but the pain is getting worse every month"
       ]
     },
+    "mid_market": {
+      "label": "Mid-market (200–999 staff)",
+      "staff_range": [
+        200,
+        999
+      ],
+      "behaviour": "A handful of people are involved in a decision. Someone from IT or operations gets a say, and finance wants a business case before agreeing. There is a set budget cycle and a light security check, but no formal procurement team. Faster than enterprise, more careful than a small business.",
+      "decision_makers": [
+        "The {boss} signs it off, but only once the head of IT agrees it fits",
+        "A small group: themselves, the {boss} and an IT lead all need to be comfortable",
+        "They own the budget, but finance wants a short business case first"
+      ],
+      "budget_ranges": [
+        {
+          "range": "£10,000–£20,000",
+          "approved_probability": 0.5
+        },
+        {
+          "range": "£20,000–£40,000",
+          "approved_probability": 0.45
+        },
+        {
+          "range": "£40,000–£70,000",
+          "approved_probability": 0.35
+        }
+      ],
+      "timelines": [
+        "Wants a decision within about a month and the first teams live within two to three months",
+        "The budget is set for this quarter, so they need to decide before it ends",
+        "IT needs about three weeks to review security, and they would like a pilot live before the next planning round"
+      ]
+    },
     "enterprise": {
       "label": "Enterprise (1,000+ staff)",
-      "staff_range": [1000, 8000],
+      "staff_range": [
+        1000,
+        8000
+      ],
       "behaviour": "Several stakeholders are involved. IT security and procurement must approve. Cares about governance, SSO, and rolling out across multiple teams. Decisions are slow and cautious.",
       "decision_makers": [
         "A committee: the {boss}, IT security and procurement all have to approve",
@@ -30,9 +77,18 @@
         "They are the sponsor, but a steering group of four people makes the final call"
       ],
       "budget_ranges": [
-        { "range": "£25,000–£50,000", "approved_probability": 0.5 },
-        { "range": "£50,000–£100,000", "approved_probability": 0.4 },
-        { "range": "£100,000+", "approved_probability": 0.3 }
+        {
+          "range": "£25,000–£50,000",
+          "approved_probability": 0.5
+        },
+        {
+          "range": "£50,000–£100,000",
+          "approved_probability": 0.4
+        },
+        {
+          "range": "£100,000+",
+          "approved_probability": 0.3
+        }
       ],
       "timelines": [
         "Security review takes about 8 weeks, and they want the pilot live before Q1 planning in January",
@@ -41,11 +97,14 @@
       ]
     }
   },
-
   "departments": {
     "sales": {
       "label": "Sales",
-      "titles": ["Head of Sales", "Sales Operations Manager", "Sales Director"],
+      "titles": [
+        "Head of Sales",
+        "Sales Operations Manager",
+        "Sales Director"
+      ],
       "boss_title": "Managing Director",
       "cares_most_about": "monday CRM fit, whether reps will actually use it, and CRM integrations",
       "current_tools": [
@@ -59,24 +118,46 @@
           "surface": "We're struggling with reporting.",
           "real": "The pipeline lives in spreadsheets, so there's no reliable forecast. The board keeps asking for numbers nobody trusts.",
           "cost_templates": [
-            { "template": "About {n} hours a week per sales manager rebuilding the forecast by hand", "min": 4, "max": 8 },
-            { "template": "Roughly {n}% of deals slip past their forecast close date because nobody has visibility", "min": 20, "max": 35 }
+            {
+              "template": "About {n} hours a week per sales manager rebuilding the forecast by hand",
+              "min": 4,
+              "max": 8
+            },
+            {
+              "template": "Roughly {n}% of deals slip past their forecast close date because nobody has visibility",
+              "min": 20,
+              "max": 35
+            }
           ],
-          "success_metrics": ["Forecast accuracy within 10%", "Managers spend under an hour a week on reporting"]
+          "success_metrics": [
+            "Forecast accuracy within 10%",
+            "Managers spend under an hour a week on reporting"
+          ]
         },
         {
           "surface": "Our reps aren't keeping the CRM up to date.",
           "real": "The current CRM is clunky, so reps keep notes elsewhere. Leads go cold because follow-ups get missed.",
           "cost_templates": [
-            { "template": "Around {n} missed follow-ups a week, which they estimate costs a few deals a quarter", "min": 6, "max": 15 }
+            {
+              "template": "Around {n} missed follow-ups a week, which they estimate costs a few deals a quarter",
+              "min": 6,
+              "max": 15
+            }
           ],
-          "success_metrics": ["90% of reps updating deals daily", "No lead untouched for more than 48 hours"]
+          "success_metrics": [
+            "90% of reps updating deals daily",
+            "No lead untouched for more than 48 hours"
+          ]
         }
       ]
     },
     "operations": {
       "label": "Operations",
-      "titles": ["COO", "Operations Manager", "Head of Operations"],
+      "titles": [
+        "COO",
+        "Operations Manager",
+        "Head of Operations"
+      ],
       "boss_title": "CEO",
       "cares_most_about": "process automation and avoiding disruption during rollout",
       "current_tools": [
@@ -90,24 +171,46 @@
           "surface": "Things keep falling through the cracks.",
           "real": "Work is tracked across email and several tools, so handovers between teams get missed and customers notice.",
           "cost_templates": [
-            { "template": "About {n} hours a week per manager chasing status updates", "min": 5, "max": 10 },
-            { "template": "Around {n} missed handovers a month that end up in front of a customer", "min": 3, "max": 8 }
+            {
+              "template": "About {n} hours a week per manager chasing status updates",
+              "min": 5,
+              "max": 10
+            },
+            {
+              "template": "Around {n} missed handovers a month that end up in front of a customer",
+              "min": 3,
+              "max": 8
+            }
           ],
-          "success_metrics": ["Zero missed handovers", "One place to see the status of every project"]
+          "success_metrics": [
+            "Zero missed handovers",
+            "One place to see the status of every project"
+          ]
         },
         {
           "surface": "We've outgrown how we work.",
           "real": "The processes only exist in people's heads. New starters take months to get up to speed and everything depends on a couple of people.",
           "cost_templates": [
-            { "template": "New starters take about {n} weeks longer than they should to become productive", "min": 4, "max": 10 }
+            {
+              "template": "New starters take about {n} weeks longer than they should to become productive",
+              "min": 4,
+              "max": 10
+            }
           ],
-          "success_metrics": ["New starter productive in half the time", "Core processes documented and automated"]
+          "success_metrics": [
+            "New starter productive in half the time",
+            "Core processes documented and automated"
+          ]
         }
       ]
     },
     "product": {
       "label": "Product",
-      "titles": ["Head of Product", "Product Manager Lead", "VP Product"],
+      "titles": [
+        "Head of Product",
+        "Product Manager Lead",
+        "VP Product"
+      ],
       "boss_title": "CTO",
       "cares_most_about": "Jira and dev-tool integrations, and flexibility",
       "current_tools": [
@@ -121,23 +224,41 @@
           "surface": "Stakeholders are always asking where things are.",
           "real": "The roadmap and sprints are split across tools, so nobody outside product has visibility and product spends its time in update meetings.",
           "cost_templates": [
-            { "template": "About {n} hours a week per PM on stakeholder updates and status decks", "min": 4, "max": 9 }
+            {
+              "template": "About {n} hours a week per PM on stakeholder updates and status decks",
+              "min": 4,
+              "max": 9
+            }
           ],
-          "success_metrics": ["Stakeholders self-serve status", "PMs spend under an hour a week on updates"]
+          "success_metrics": [
+            "Stakeholders self-serve status",
+            "PMs spend under an hour a week on updates"
+          ]
         },
         {
           "surface": "Prioritisation is a constant argument.",
           "real": "Feature requests come in through email, Slack and sales calls with no single intake process, so the team can't show why one thing is ranked above another.",
           "cost_templates": [
-            { "template": "Roughly {n} requests a month get lost or duplicated", "min": 10, "max": 30 }
+            {
+              "template": "Roughly {n} requests a month get lost or duplicated",
+              "min": 10,
+              "max": 30
+            }
           ],
-          "success_metrics": ["Single intake for requests", "Every roadmap item traceable to a request"]
+          "success_metrics": [
+            "Single intake for requests",
+            "Every roadmap item traceable to a request"
+          ]
         }
       ]
     },
     "finance": {
       "label": "Finance",
-      "titles": ["CFO", "Finance Director", "Head of Finance"],
+      "titles": [
+        "CFO",
+        "Finance Director",
+        "Head of Finance"
+      ],
       "boss_title": "CEO",
       "cares_most_about": "ROI, total cost and contract terms",
       "current_tools": [
@@ -151,22 +272,35 @@
           "surface": "Software spend keeps creeping up.",
           "real": "Every team has bought its own tools, there is no single view of spend, and approvals happen by email so nobody can see what has been committed.",
           "cost_templates": [
-            { "template": "They estimate about £{n}k a year is wasted on overlapping tools", "min": 30, "max": 90 }
+            {
+              "template": "They estimate about £{n}k a year is wasted on overlapping tools",
+              "min": 30,
+              "max": 90
+            }
           ],
-          "success_metrics": ["Consolidate to fewer tools", "Every approval traceable and under 2 days"]
+          "success_metrics": [
+            "Consolidate to fewer tools",
+            "Every approval traceable and under 2 days"
+          ]
         },
         {
           "surface": "Month-end close is painful.",
           "real": "Close tasks and approvals are chased by email, so the team works late every month and errors slip through.",
           "cost_templates": [
-            { "template": "Close takes {n} working days, and they want it nearer 4", "min": 7, "max": 10 }
+            {
+              "template": "Close takes {n} working days, and they want it nearer 4",
+              "min": 7,
+              "max": 10
+            }
           ],
-          "success_metrics": ["Close in 5 working days or fewer", "Audit trail for every approval"]
+          "success_metrics": [
+            "Close in 5 working days or fewer",
+            "Audit trail for every approval"
+          ]
         }
       ]
     }
   },
-
   "competing_options": [
     "Doing the setup themselves with their in-house admin",
     "Another monday.com partner they have had a first call with",
@@ -174,10 +308,22 @@
     "Hiring a contractor to build it"
   ],
   "alt_tools": {
-    "sales": ["HubSpot", "Salesforce"],
-    "operations": ["Asana", "Smartsheet"],
-    "product": ["Jira Product Discovery", "Productboard"],
-    "finance": ["Airtable", "a finance workflow tool"]
+    "sales": [
+      "HubSpot",
+      "Salesforce"
+    ],
+    "operations": [
+      "Asana",
+      "Smartsheet"
+    ],
+    "product": [
+      "Jira Product Discovery",
+      "Productboard"
+    ],
+    "finance": [
+      "Airtable",
+      "a finance workflow tool"
+    ]
   },
   "champions": [
     "A sharp team lead who is already frustrated with the current setup and would push it internally",
@@ -185,7 +331,6 @@
     "The prospect themselves, but they're stretched thin",
     "An enthusiastic project manager who has used monday.com before"
   ],
-
   "personalities": {
     "friendly": {
       "label": "Friendly",
@@ -200,33 +345,144 @@
       "behaviour": "Guarded, blunt and a little impatient. Has heard vendor pitches before and challenges claims. Asks 'why should I care?' and 'what does that actually mean?'. Respects directness and evidence, and can warm up slightly if the rep earns it."
     }
   },
-
   "difficulties": {
     "easy": {
       "label": "Easy",
-      "objections": { "min": 1, "max": 1 },
+      "objections": {
+        "min": 1,
+        "max": 1
+      },
       "behaviour": "Answers reasonable questions directly and shares information when asked. Raises exactly the number of objections listed and softens quickly once the rep handles one reasonably. Warms up fast."
     },
     "medium": {
       "label": "Medium",
-      "objections": { "min": 2, "max": 3 },
+      "objections": {
+        "min": 2,
+        "max": 3
+      },
       "behaviour": "Gives short, surface-level answers first. Shares deeper or hidden information only after a good follow-up question (one that digs into the 'why' or the impact). Doesn't volunteer numbers unprompted."
     },
     "hard": {
       "label": "Hard",
-      "objections": { "min": 3, "max": 5 },
+      "objections": {
+        "min": 3,
+        "max": 5
+      },
       "behaviour": "Guards hidden information and only reveals it after several strong, well-timed questions and after the rep has earned trust. Tries to end the call early. If the rep pitches irrelevant material for about 90 seconds of call time without asking about the prospect's situation, hang up."
     }
   },
-
   "name_pools": {
-    "feminine_first_names": ["Sarah", "Priya", "Aisha", "Emma", "Hannah", "Olivia", "Fiona", "Chloe", "Rachel", "Nadia", "Laura", "Zoe"],
-    "first_names": ["Sarah", "James", "Priya", "Tom", "Aisha", "Daniel", "Emma", "Marcus", "Hannah", "Callum", "Olivia", "Rahul", "Fiona", "Ben", "Chloe", "Imran", "Rachel", "Owen", "Nadia", "Graham", "Laura", "Kwame", "Zoe", "Patrick"],
-    "last_names": ["Whitaker", "Patel", "Okafor", "Bennett", "Hughes", "Sinclair", "Nguyen", "Morgan", "Ahmed", "Fletcher", "Brennan", "Clarke", "Hussain", "Rowe", "Thompson", "Adeyemi", "Kerr", "Lambert", "Shah", "Doyle"],
-    "company_prefixes": ["Northgate", "Bright", "Harbour", "Ironwood", "Kestrel", "Lumen", "Meridian", "Oakfield", "Pinnacle", "Redwood", "Summit", "Tidewater", "Vantage", "Willow", "Anvil", "Beacon"],
+    "feminine_first_names": [
+      "Sarah",
+      "Priya",
+      "Aisha",
+      "Emma",
+      "Hannah",
+      "Olivia",
+      "Fiona",
+      "Chloe",
+      "Rachel",
+      "Nadia",
+      "Laura",
+      "Zoe"
+    ],
+    "first_names": [
+      "Sarah",
+      "James",
+      "Priya",
+      "Tom",
+      "Aisha",
+      "Daniel",
+      "Emma",
+      "Marcus",
+      "Hannah",
+      "Callum",
+      "Olivia",
+      "Rahul",
+      "Fiona",
+      "Ben",
+      "Chloe",
+      "Imran",
+      "Rachel",
+      "Owen",
+      "Nadia",
+      "Graham",
+      "Laura",
+      "Kwame",
+      "Zoe",
+      "Patrick"
+    ],
+    "last_names": [
+      "Whitaker",
+      "Patel",
+      "Okafor",
+      "Bennett",
+      "Hughes",
+      "Sinclair",
+      "Nguyen",
+      "Morgan",
+      "Ahmed",
+      "Fletcher",
+      "Brennan",
+      "Clarke",
+      "Hussain",
+      "Rowe",
+      "Thompson",
+      "Adeyemi",
+      "Kerr",
+      "Lambert",
+      "Shah",
+      "Doyle"
+    ],
+    "company_prefixes": [
+      "Northgate",
+      "Bright",
+      "Harbour",
+      "Ironwood",
+      "Kestrel",
+      "Lumen",
+      "Meridian",
+      "Oakfield",
+      "Pinnacle",
+      "Redwood",
+      "Summit",
+      "Tidewater",
+      "Vantage",
+      "Willow",
+      "Anvil",
+      "Beacon"
+    ],
     "company_suffixes_by_size": {
-      "smb": ["Digital", "Logistics", "Consulting", "Group", "Labs", "Partners", "Supplies", "Media"],
-      "enterprise": ["Holdings", "International", "Group plc", "Global", "Industries", "Financial", "Networks", "Systems"]
+      "smb": [
+        "Digital",
+        "Logistics",
+        "Consulting",
+        "Group",
+        "Labs",
+        "Partners",
+        "Supplies",
+        "Media"
+      ],
+      "mid_market": [
+        "Group",
+        "Solutions",
+        "Partners",
+        "Services",
+        "Technologies",
+        "Logistics",
+        "Industries",
+        "Systems Ltd"
+      ],
+      "enterprise": [
+        "Holdings",
+        "International",
+        "Group plc",
+        "Global",
+        "Industries",
+        "Financial",
+        "Networks",
+        "Systems"
+      ]
     }
   }
 }

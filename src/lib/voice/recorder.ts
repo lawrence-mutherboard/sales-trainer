@@ -30,14 +30,13 @@ class PcmCapture extends AudioWorkletProcessor {
 registerProcessor("pcm-capture", PcmCapture);
 `;
 
-export const RECORDER_SAMPLE_RATE = SAMPLE_RATE;
-
 export function recorderSupported(): boolean {
   return typeof window !== "undefined" && "AudioWorkletNode" in window && !!navigator.mediaDevices?.getUserMedia;
 }
 
 export class PcmRecorder {
   readonly sampleRate = SAMPLE_RATE;
+
   private ctx: AudioContext | null = null;
   private stream: MediaStream | null = null;
   private chunks: { start: number; data: Float32Array }[] = [];

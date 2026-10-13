@@ -51,6 +51,14 @@ async function accountVoices(): Promise<AccountVoice[]> {
   return voiceCache.voices;
 }
 
+/** Loads the account's voice list ahead of time (when the app picks voices automatically), so the first line of a call doesn't pay for it. */
+export function warmElevenLabs(): void {
+  if (!elevenLabsEnabled()) return;
+  const v = config.ai.tts.elevenlabs.voices;
+  const allConfigured = [v.uk, v.us].every((g) => g.feminine.length > 0 && g.masculine.length > 0);
+  if (!allConfigured) void accountVoices().catch(() => undefined);
+}
+
 export async function pickElevenVoice(seed: string, feminine: boolean, accent: Accent): Promise<string> {
   const gender = feminine ? "feminine" : "masculine";
   const configured = config.ai.tts.elevenlabs.voices[accent][gender];
@@ -111,38 +119,4 @@ export async function streamElevenLabsSpeech(args: {
     throw new Error(`ElevenLabs ${res.status}: ${detail.slice(0, 300)}`);
   }
   return res;
-}
-
-// ---- Speech to text (Scribe) -------------------------------------------------------------------------------------
-// Turns a clip of the rep's speech (a WAV file) into text. A list of expected words ("keyterms") nudges it towards the
-// right spelling of names like mutherboard and monday.com. ElevenLabs charges a small extra for using keyterms.
-
-export async function transcribeWithScribe(wav: Blob, keyterms: string[]): Promise<string> {
-  const stt = config.ai.stt;
-
-  const send = async (withKeyterms: boolean) => {
-    const form = new FormData();
-    form.append("file", wav, "speech.wav");
-    form.append("model_id", stt.model_id);
-    form.append("language_code", "en");
-    form.append("tag_audio_events", "false");
-    form.append("diarize", "false");
-    if (withKeyterms) for (const t of keyterms.slice(0, 1000)) form.append("keyterms", t.slice(0, 50));
-    return fetch(`${API}/v1/speech-to-text`, {
-      method: "POST",
-      headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY! },
-      body: form,
-    });
-  };
-
-  let res = await send(stt.use_keyterms && keyterms.length > 0);
-  // If the service rejects the keyterms, still transcribe the clip rather than losing the turn.
-  if ((res.status === 400 || res.status === 422) && stt.use_keyterms) res = await send(false);
-
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`ElevenLabs speech-to-text ${res.status}: ${detail.slice(0, 300)}`);
-  }
-  const data = (await res.json()) as { text?: string };
-  return (data.text ?? "").trim();
 }

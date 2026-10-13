@@ -6,6 +6,7 @@ import { getProvider } from "@/lib/ai/provider";
 import { buildClockNote, buildGlobalPrompt, buildSessionPrompt } from "@/lib/ai/prospectPrompt";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { END_CALL_MARKER, type SessionRow, type SessionSecrets, type TurnRow } from "@/lib/types";
+import { TABLES } from "@/lib/db/tables";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -54,11 +55,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const cachedSecrets = secretsCache.get(id);
   const [bodyRaw, sessionRes, turnRes, secretRes] = await Promise.all([
     req.json().catch(() => null),
-    db.from("sessions").select("*").eq("id", id).maybeSingle(),
-    db.from("turns").select("*").eq("session_id", id).order("idx", { ascending: true }),
+    db.from(TABLES.sessions).select("*").eq("id", id).maybeSingle(),
+    db.from(TABLES.turns).select("*").eq("session_id", id).order("idx", { ascending: true }),
     cachedSecrets
       ? Promise.resolve({ data: { hidden_profile: cachedSecrets } })
-      : db.from("session_secrets").select("hidden_profile").eq("session_id", id).maybeSingle(),
+      : db.from(TABLES.secrets).select("hidden_profile").eq("session_id", id).maybeSingle(),
   ]);
 
   const session = sessionRes.data as unknown as SessionRow | null;
@@ -96,7 +97,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       started_ms: body.startedMs ?? null,
       ended_ms: body.endedMs ?? null,
     };
-    saveRepTurn = Promise.resolve(db.from("turns").insert(row)).then((r) => ({ error: r.error }));
+    saveRepTurn = Promise.resolve(db.from(TABLES.turns).insert(row)).then((r) => ({ error: r.error }));
     repTurns = [...turns, { id: "pending", ...row } as TurnRow];
   } else if (turns.length === 0) {
     // Opening: the prospect answers the call first.
@@ -108,7 +109,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (session.status === "ready" || (body.inputMode && body.inputMode !== session.input_mode)) {
     void Promise.resolve(
       db
-        .from("sessions")
+        .from(TABLES.sessions)
         .update({ status: "in_progress", ...(body.inputMode ? { input_mode: body.inputMode } : {}) })
         .eq("id", id),
     ).catch((e) => console.error("turn: status update failed", e));
@@ -211,7 +212,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
         if (remainder) send({ t: "delta", text: remainder });
 
         const { data: saved, error } = await db
-          .from("turns")
+          .from(TABLES.turns)
           .insert({ session_id: id, idx: repTurns.length, speaker: "prospect", text: clean })
           .select("id")
           .single();

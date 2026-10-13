@@ -19,7 +19,7 @@
       },
       "filler_pct": {
         "label": "Filler words", "unit": "% of your words", "max": 3, "target": "under 3%",
-        "note": "A common coaching target. Gong's own analysis of nearly 500,000 calls found no link between filler words and winning, so treat this as polish, not a priority. Speech-to-text often drops fillers, so the count is a minimum."
+        "note": "A common coaching target, and part of your score (Smooth delivery, 5 points). Gong's analysis of nearly 500,000 calls found little link between filler words and winning, so it is worth only a few points. Speech-to-text can drop quick fillers, so the count is a minimum."
       },
       "longest_monologue_s": {
         "label": "Longest stretch talking", "unit": "seconds", "max": 76, "target": "under about 76 s",
@@ -41,7 +41,7 @@
       },
       "filler_pct": {
         "label": "Filler words", "unit": "% of your words", "max": 3, "target": "under 3%",
-        "note": "A common coaching target. Gong found no link between filler words and winning, so treat this as polish. Speech-to-text often drops fillers, so the count is a minimum."
+        "note": "A common coaching target, and part of your score (Smooth delivery, 5 points). Gong found little link between filler words and winning, so it is worth only a few points. Speech-to-text can drop quick fillers, so the count is a minimum."
       },
       "longest_monologue_s": {
         "label": "Longest stretch talking", "unit": "seconds", "max": 76, "target": "under about 76 s",
