@@ -223,6 +223,8 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       const body = isRetry && serverHasRepRef.current ? { nowMs: now(), inputMode: modeRef.current } : { ...payload, nowMs: now(), inputMode: modeRef.current };
 
       const lineId = ++lineKey.current;
+      const tReq = now(); // when the app sent the rep's words to Claude
+      let tDelta = 0; // when Claude's first words came back
       let started = false;
       let pendingSentence = "";
       let carry = "";
@@ -321,6 +323,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
             } else if (ev.t === "delta") {
               if (!started) {
                 started = true;
+                tDelta = now();
                 if (fillerTimer) clearTimeout(fillerTimer);
                 setThinking(false);
                 setLines((l) => [...l, { key: lineId, speaker: "prospect", text: ev.text }]);
@@ -352,6 +355,14 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
 
         // Wait for the prospect to finish talking, then record how long they spoke (for the talk ratio).
         const spans = await Promise.all(spoken);
+        if (payload.endedMs != null && spans.length) {
+          // The one number that matters: how long after you stopped speaking did the prospect start talking?
+          const audioAt = Math.min(...spans.map((s) => s.startedMs));
+          console.log(
+            `[timing] prospect started talking ${((audioAt - payload.endedMs) / 1000).toFixed(1)} s after you stopped: ` +
+              `${tReq - payload.endedMs} ms waiting to be sure you'd finished, ${tDelta - tReq} ms for Claude's first words, ${audioAt - tDelta} ms for the voice`,
+          );
+        }
         if (spans.length && doneIdx >= 0) {
           timingsRef.current.push({
             idx: doneIdx,
@@ -570,6 +581,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         gateRef.current = rb.done;
         ringingRef.current = true;
         setRinging(true);
+        void fetch("/api/warm", { method: "POST" }).catch(() => undefined); // open the connections the first sentence needs
         void requestReply({});
         await rb.done;
         ringRef.current = null;
