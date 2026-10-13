@@ -29,6 +29,7 @@ function tooMany(userId: string): boolean {
 
 // Turns the prospect's reply (or one line of it) into streaming speech with an ElevenLabs voice.
 export async function POST(req: Request) {
+  const t0 = Date.now();
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
   if (tooMany(auth.user.id)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -47,9 +48,7 @@ export async function POST(req: Request) {
     const accent = pickAccent(voiceSeed, config.ai.tts.accent.uk_percent);
     const voiceId = await pickElevenVoice(voiceSeed, feminine, accent);
     const upstream = await streamElevenLabsSpeech({ text: speakable(text), voiceId, personality, mood });
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`[tts] ElevenLabs voice ${voiceId} (${accent}, ${feminine ? "feminine" : "masculine"}) mood=${mood ?? "-"}`);
-    }
+    console.log(`[tts] ElevenLabs ok, ${Date.now() - t0} ms to first audio (${accent}, ${feminine ? "feminine" : "masculine"}, mood ${mood ?? "-"})`);
     return new Response(upstream.body, {
       headers: { "Content-Type": "audio/pcm", "Cache-Control": "no-store", "X-TTS-Backend": "elevenlabs" },
     });
