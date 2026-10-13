@@ -22,7 +22,8 @@
     "test:siteurl": "tsx scripts/siteurl-test.ts",
     "test:auth": "tsx scripts/auth-test.ts",
     "test:punctuate": "tsx scripts/punctuate-test.ts",
-    "test:tidy": "tsx scripts/tidy-test.ts"
+    "test:tidy": "tsx scripts/tidy-test.ts",
+    "test:latency": "tsx scripts/latency-test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",

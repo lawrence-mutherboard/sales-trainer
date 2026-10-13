@@ -21,13 +21,16 @@ export function getSetupOptions(): SetupOptions {
       hint: "",
     })),
     difficulties: DIFFICULTIES.map((v) => ({ value: v, label: p.difficulties[v].label })),
-    scenarios: Object.entries(config.scenarios).map(([value, s]) => ({
-      value,
-      label: s.label,
-      enabled: s.enabled,
-      minutes: s.time_limit_min,
-      success: s.success_condition,
-      brief: s.rep_brief,
-    })),
+    // Scenarios switched off in config/scenarios.json are not offered at all.
+    scenarios: Object.entries(config.scenarios)
+      .filter(([, s]) => s.enabled)
+      .map(([value, s]) => ({
+        value,
+        label: s.label,
+        enabled: s.enabled,
+        minutes: s.time_limit_min,
+        success: s.success_condition,
+        brief: s.rep_brief,
+      })),
   };
 }

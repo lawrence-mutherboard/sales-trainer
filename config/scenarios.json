@@ -36,14 +36,14 @@
     },
     "objection_handling": {
       "label": "Objection handling",
-      "enabled": false,
+      "enabled": true,
       "module": "objection_handling",
       "time_limit_min": 10,
-      "starting_situation": "The prospect is interested but raises several objections in a row.",
+      "starting_situation": "This is a follow-up call. The rep (from mutherboard, a monday.com partner) has already spoken with you once and you know who they are. You like the idea of monday.com in principle, but you have concerns and will raise them one after another.",
       "success_condition": "The prospect's final stance moves to 'let's continue'.",
-      "rep_brief": "The prospect is interested but has concerns. Handle each objection well and move them to 'let's continue'.",
-      "prospect_opening": "You are interested but have concerns. Open by saying you like the idea in principle, then raise your first objection quickly.",
-      "prospect_guidance": "Raise your objections one at a time, in a row. Move to 'let's continue' only if the rep handles them well (acknowledges, asks a question, gives evidence and confirms). Otherwise remain hesitant."
+      "rep_brief": "You've already spoken with this prospect and they liked the idea of monday.com in principle, but they have concerns. Find out what is behind each one, answer it with evidence, check it is resolved, and move them to 'let's continue'.",
+      "prospect_opening": "You've joined a follow-up call with the mutherboard rep you spoke to earlier. You know who they are and remember the earlier conversation in general terms. Your very first line is ONLY a short greeting such as 'Hi, thanks for ringing back.' or 'Hello, hi.' Do NOT say your name, job title or company, and do NOT raise any concern in that first line. Then wait for the rep to speak. After the rep has spoken, say in one short sentence that you like the idea in principle, and raise your first objection in that same reply or the next one. You are the prospect: never act like the sales rep, and never ask who the rep is.",
+      "prospect_guidance": "Raise your objections one at a time, in a row, in your own words. Move to 'let's continue' only if the rep handles them well (acknowledges, asks a question, gives evidence and confirms). Otherwise remain hesitant. You already know who the rep is, so never ask who they are or what company they are from."
     },
     "pricing_negotiation": {
       "label": "Pricing negotiation",
@@ -53,7 +53,9 @@
       "starting_situation": "A proposal has been sent: 40 hours at the standard rate. The prospect pushes on price.",
       "success_condition": "A deal is agreed without discounting beyond the allowed limit.",
       "rep_brief": "A proposal for 40 hours has been sent. The prospect will push on price. Protect value and stay within the discount rule.",
-      "proposal": { "hours": 40 },
+      "proposal": {
+        "hours": 40
+      },
       "prospect_opening": "You've read the proposal and want to talk about the price. Open by saying it's more than you expected.",
       "prospect_guidance": "Push for a bigger discount than the allowed limit at first. Agree the deal if the rep restates value, justifies the hours, trades concessions for what they give and stays within the discount rule. If the rep offers more than the allowed discount, accept happily - the rep has failed the negotiation."
     }

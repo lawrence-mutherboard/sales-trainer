@@ -3,6 +3,7 @@ import { z } from "zod";
 import { DEPARTMENTS, DIFFICULTIES, PERSONALITIES, SIZES, config } from "@/lib/config";
 import { ensureProfile, requireUser } from "@/lib/api/auth";
 import { generateProspect } from "@/lib/profile/generate";
+import { warmElevenLabs } from "@/lib/ai/elevenlabs";
 import { isUuid } from "@/lib/api/auth";
 import type { SessionRow, SessionSecrets } from "@/lib/types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -16,6 +17,17 @@ const Body = z.object({
   difficulty: z.enum(DIFFICULTIES),
 });
 
+// Personality and difficulty can also be "random": like a real call to someone you don't know, the rep doesn't choose.
+// The dice are rolled here on the server; the session stores the real values, so the prospect and the scoring work as usual.
+const RandomBody = Body.extend({
+  personality: z.enum([...PERSONALITIES, "random"]),
+  difficulty: z.enum([...DIFFICULTIES, "random"]),
+});
+
+function pickOne<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
 // A rep can also practise the SAME prospect again (same person, company and hidden background): { repeat_of: <their earlier session id> }.
 const Repeat = z.object({ repeat_of: z.string() });
 
@@ -25,6 +37,7 @@ export async function POST(req: Request) {
   if ("error" in auth) return auth.error;
 
   await ensureProfile(auth.user);
+  warmElevenLabs(); // load the voice list now, not on the first spoken line
 
   const raw = await req.json().catch(() => null);
   const repeat = Repeat.safeParse(raw);
@@ -50,9 +63,13 @@ export async function POST(req: Request) {
     };
     repeated = { name: orig.prospect_name, title: orig.prospect_title, company: orig.prospect_company, secrets };
   } else {
-    const parsed = Body.safeParse(raw);
+    const parsed = RandomBody.safeParse(raw);
     if (!parsed.success) return NextResponse.json({ error: "Invalid settings" }, { status: 400 });
-    b = parsed.data;
+    b = {
+      ...parsed.data,
+      personality: parsed.data.personality === "random" ? pickOne(PERSONALITIES) : parsed.data.personality,
+      difficulty: parsed.data.difficulty === "random" ? pickOne(DIFFICULTIES) : parsed.data.difficulty,
+    };
   }
 
   const scenario = config.scenarios[b.scenario];

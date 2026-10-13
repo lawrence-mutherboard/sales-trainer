@@ -33,9 +33,20 @@
       {
         "id": "core_next_steps",
         "name": "Next steps",
-        "max": 10,
+        "max": 5,
         "question": "Does the rep agree a specific next step with a date and involve the right people?",
         "full": "States the next step, agrees a date and time, and names who else needs to be involved."
+      },
+      {
+        "id": "core_fluency",
+        "name": "Smooth delivery",
+        "max": 5,
+        "question": "Worked out by code, not by the AI: how many filler words (um, uh, erm, you know, sort of, basically, actually, a sentence starting with 'so') the rep used as a share of their words.",
+        "full": "Speaks cleanly, with few filler words. A short silent pause sounds more confident than 'um'.",
+        "computed_in_code": true,
+        "filler_pct_full": 3,
+        "filler_pct_partial": 6,
+        "min_words": 30
       }
     ]
   },

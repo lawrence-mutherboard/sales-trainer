@@ -205,6 +205,11 @@ const rubric = z.object({
     criteria: z.array(
       criterion.extend({
         talk_ratio_max: z.number().optional(),
+        // Criteria judged entirely by code (not sent to the AI). core_fluency uses the filler-word share of the rep's words.
+        computed_in_code: z.boolean().optional(),
+        filler_pct_full: z.number().optional(),
+        filler_pct_partial: z.number().optional(),
+        min_words: z.number().optional(),
         talk_ratio_max_by_scenario: z.record(z.string(), z.number()).optional(),
         over_ratio_cap_grade: z.enum(["partial", "zero"]).optional(),
       }),

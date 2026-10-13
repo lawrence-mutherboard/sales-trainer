@@ -3,9 +3,10 @@ import { z } from "zod";
 import { config, getScenario } from "@/lib/config";
 import { getProvider, RefusalError } from "@/lib/ai/provider";
 import { computeTalkStats } from "@/lib/scoring/talkRatio";
-import { computeCallMetrics } from "@/lib/scoring/callMetrics";
+import { computeCallMetrics, countFillers } from "@/lib/scoring/callMetrics";
 import {
   PROFILE_FIELDS,
+  type CallMetrics,
   type CriterionResult,
   type Grade,
   type ProfileFinding,
@@ -92,6 +93,58 @@ function transcriptText(turns: TurnRow[]): string {
     .join("\n");
 }
 
+/** "Smooth delivery": graded in code from the share of the rep's words that are fillers. */
+function fluencyResult(
+  def: { id: string; name: string; max: number },
+  section: "core" | "module",
+  metrics: CallMetrics,
+  turns: TurnRow[],
+  cfg: { filler_pct_full?: number; filler_pct_partial?: number; min_words?: number } | undefined,
+): CriterionResult {
+  const fullAt = cfg?.filler_pct_full ?? 3;
+  const partialAt = cfg?.filler_pct_partial ?? 6;
+  const tip = `Keep filler words under ${fullAt}% of what you say. A short silent pause sounds more confident than "um".`;
+
+  // Typed calls and very short calls can't be judged, so they get full marks rather than a made-up penalty.
+  if (!metrics.timed || metrics.rep_words < (cfg?.min_words ?? 30)) {
+    return { id: def.id, name: def.name, section, points: def.max, max: def.max, grade: "full", quote: "", turn: 0, tip, improve: "", note: "Not measured: typed or very short call." };
+  }
+
+  const grade: Grade = metrics.filler_pct <= fullAt ? "full" : metrics.filler_pct <= partialAt ? "partial" : "zero";
+
+  // Quote the rep line with the most fillers.
+  let worst: TurnRow | null = null;
+  let worstCount = 0;
+  for (const t of turns) {
+    if (t.speaker !== "rep") continue;
+    const n = countFillers(t.text).total;
+    if (n > worstCount) {
+      worst = t;
+      worstCount = n;
+    }
+  }
+  const quote = worst ? worst.text.split(/\s+/).slice(0, 25).join(" ") : "";
+  const top = metrics.fillers.slice(0, 3).map((f) => `"${f.word}" ×${f.count}`).join(", ");
+  const improve =
+    metrics.filler_count === 0
+      ? "No filler words were picked up. Keep it up."
+      : `You used ${metrics.filler_count} filler words (${metrics.filler_pct}% of your words): ${top}. Next time, stop and breathe where you would say them, instead of filling the gap.`;
+
+  return {
+    id: def.id,
+    name: def.name,
+    section,
+    points: pointsFor(def.max, grade),
+    max: def.max,
+    grade,
+    quote,
+    turn: worst ? worst.idx + 1 : 0,
+    tip,
+    improve,
+    note: `${metrics.filler_pct}% of your words were fillers (target under ${fullAt}%). Counted from the transcript, so a quick "um" may be missed.`,
+  };
+}
+
 function pointsFor(max: number, grade: Grade): number {
   const g = config.rubric.grade_points[grade];
   return Math.floor(max * g);
@@ -107,7 +160,7 @@ Grading rules:
 - "improve" is the room for improvement on that criterion: one or two sentences naming the specific thing the rep should do differently next time, tied to what they actually said. Never leave it generic. If the grade is "full", say what going from good to excellent would add; if there is truly nothing, say what to keep doing.
 - "strengths": two or three short, specific things the rep did well in this call (each under 20 words), tied to the transcript.
 - The transcript comes from speech recognition, so it has little punctuation and may contain mis-heard words. Do not penalise for that.
-- Do not judge talk ratio. It is computed separately.
+- Do not judge talk ratio or filler words. They are computed separately.
 - Accuracy: list each clearly wrong monday.com or mutherboard price or fact, and each promise of a service mutherboard does not offer, using only the business facts supplied. If the rep is vague, hedges, or says they will check, that is not an error.
 - Success condition: decide whether the scenario's success condition was met, judged from what was actually agreed in the transcript. It must match the condition's specifics (for example a booked meeting needs a specific date and time).
 - Top improvements: exactly 3, ranked by how many points they would have won. Each has a short title, the rep's line at that moment, and an "example_line" the rep could have said instead (natural spoken British English, one or two sentences).
@@ -139,7 +192,7 @@ export async function scoreSession({ session, turns, secrets }: ScoreInput): Pro
     : `Speaking metrics: ${metrics.filler_count} filler words, ${metrics.questions} questions asked (pace is not measurable for this call).`;
 
   const rubricForPrompt = [
-    ...core.criteria.map((c) => ({ id: c.id, section: "core", name: c.name, max: c.max, question: c.question, full_marks: c.full })),
+    ...core.criteria.filter((c) => !c.computed_in_code).map((c) => ({ id: c.id, section: "core", name: c.name, max: c.max, question: c.question, full_marks: c.full })),
     ...mod.criteria.map((c) => ({ id: c.id, section: `module: ${mod.label} (${mod.framework})`, name: c.name, max: c.max, question: c.question, full_marks: c.full })),
   ];
 
@@ -199,6 +252,7 @@ ${transcriptText(turns)}`;
     defs: { id: string; name: string; max: number }[],
   ): CriterionResult[] =>
     defs.map((def) => {
+      if (def.id === "core_fluency") return fluencyResult(def, section, metrics, turns, core.criteria.find((c) => c.id === "core_fluency"));
       const m = byId.get(def.id);
       let grade: Grade = m?.grade ?? "zero";
       let note: string | undefined = m ? undefined : "The scorer did not return this criterion, so it scored zero.";

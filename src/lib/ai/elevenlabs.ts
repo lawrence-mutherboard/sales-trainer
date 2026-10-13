@@ -51,6 +51,14 @@ async function accountVoices(): Promise<AccountVoice[]> {
   return voiceCache.voices;
 }
 
+/** Loads the account's voice list ahead of time (when the app picks voices automatically), so the first line of a call doesn't pay for it. */
+export function warmElevenLabs(): void {
+  if (!elevenLabsEnabled()) return;
+  const v = config.ai.tts.elevenlabs.voices;
+  const allConfigured = [v.uk, v.us].every((g) => g.feminine.length > 0 && g.masculine.length > 0);
+  if (!allConfigured) void accountVoices().catch(() => undefined);
+}
+
 export async function pickElevenVoice(seed: string, feminine: boolean, accent: Accent): Promise<string> {
   const gender = feminine ? "feminine" : "masculine";
   const configured = config.ai.tts.elevenlabs.voices[accent][gender];

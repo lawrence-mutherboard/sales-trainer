@@ -59,7 +59,7 @@ type StreamEvent =
   | { t: "error"; message: string; retryable?: boolean; repSaved?: boolean };
 
 const MIN_CHUNK = 25; // characters; avoids speaking tiny one-word chunks
-const MIN_FIRST_CHUNK = 12; // the first chunk is allowed to be shorter, so the prospect starts talking sooner
+const MIN_FIRST_CHUNK = 6; // the first chunk is allowed to be shorter, so the prospect starts talking sooner
 const FILLER_DELAY_MS = 700; // if the reply has not started this long after the rep stops, play a quick "mm" / "right"
 
 function fmt(ms: number) {

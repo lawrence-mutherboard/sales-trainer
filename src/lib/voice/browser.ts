@@ -269,12 +269,19 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     form.append("audio", new Blob([wav as unknown as BlobPart], { type: "audio/wav" }), "speech.wav");
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), TRANSCRIBE_TIMEOUT_MS);
+    const started = performance.now();
+    const took = () => Math.round(performance.now() - started);
     try {
       const res = await fetch("/api/transcribe", { method: "POST", body: form, signal: abort.signal });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        console.warn(`[stt] OpenAI transcription failed (HTTP ${res.status}) after ${took()} ms, using the browser's text (no punctuation or fillers)`);
+        return null;
+      }
       const data = (await res.json()) as { text?: string };
+      console.log(`[stt] OpenAI transcription ${took()} ms`);
       return data.text?.trim() || null;
     } catch {
+      console.warn(`[stt] OpenAI transcription gave up after ${took()} ms (limit ${TRANSCRIBE_TIMEOUT_MS} ms), using the browser's text (no punctuation or fillers)`);
       return null;
     } finally {
       clearTimeout(timer);
