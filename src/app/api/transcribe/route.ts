@@ -20,6 +20,7 @@ function tooMany(userId: string): boolean {
 // Turns one clip of the rep's speech into text, more accurately than the browser can. The audio is sent to OpenAI
 // for transcription only. It is not stored by this app.
 export async function POST(req: Request) {
+  const t0 = Date.now();
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
   if (tooMany(auth.user.id)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
   if (!(audio instanceof Blob)) return NextResponse.json({ error: "No audio" }, { status: 400 });
   if (audio.size < 1000 || audio.size > MAX_BYTES) return NextResponse.json({ error: "Bad audio size" }, { status: 400 });
 
+  const parsedMs = Date.now() - t0;
   const stt = config.ai.stt;
   const vocabulary = [...new Set([...stt.vocabulary, ...config.speechCorrections.map((c) => c.said)])];
   const prompt = `${stt.prompt} Words and names that may come up: ${vocabulary.join(", ")}.`;
@@ -44,7 +46,9 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
       body,
+      signal: AbortSignal.timeout(12_000),
     });
+    console.log(`[transcribe] ${audio.size} bytes, sign-in check + upload took ${parsedMs} ms, OpenAI ${stt.model} answered HTTP ${res.status} in ${Date.now() - t0 - parsedMs} ms`);
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       throw new Error(`OpenAI ${res.status}: ${detail.slice(0, 300)}`);
@@ -52,7 +56,7 @@ export async function POST(req: Request) {
     const data = (await res.json()) as { text?: string };
     return NextResponse.json({ text: (data.text ?? "").trim() });
   } catch (err) {
-    console.error("transcribe: failed", err);
+    console.error(`transcribe: failed after ${Date.now() - t0} ms`, err);
     return NextResponse.json({ error: "Transcription failed" }, { status: 502 });
   }
 }

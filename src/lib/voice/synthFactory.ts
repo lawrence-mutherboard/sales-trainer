@@ -13,5 +13,7 @@ export function speechOutputSupported(): boolean {
 }
 
 export function createSynth(now: () => number, onSpeakingChange: (speaking: boolean) => void): Synth {
-  return ttsProvider() === "elevenlabs" ? new ServerTtsSynth(now, onSpeakingChange) : new BrowserSynth(now, onSpeakingChange);
+  const provider = ttsProvider();
+  console.log(provider === "elevenlabs" ? "[voice] using the ElevenLabs voice" : "[voice] using the browser's built-in voice (NEXT_PUBLIC_TTS_PROVIDER is not 'elevenlabs' in this build)");
+  return provider === "elevenlabs" ? new ServerTtsSynth(now, onSpeakingChange) : new BrowserSynth(now, onSpeakingChange);
 }
