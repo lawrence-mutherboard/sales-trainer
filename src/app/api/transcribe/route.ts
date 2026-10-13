@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
       body,
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(Math.max(12_000, (Number(process.env.NEXT_PUBLIC_STT_TIMEOUT_MS) || 0) + 3_000)),
     });
     console.log(`[transcribe] ${audio.size} bytes, sign-in check + upload took ${parsedMs} ms, OpenAI ${stt.model} answered HTTP ${res.status} in ${Date.now() - t0 - parsedMs} ms`);
     if (!res.ok) {

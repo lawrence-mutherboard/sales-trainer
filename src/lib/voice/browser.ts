@@ -23,7 +23,9 @@ import type { SpeakSpan, Synth, UserUtterance, VoiceAdapter, VoiceStartOptions }
 const MAX_EXTRA_WAIT_MS = 8000;
 
 const ACCURATE_STT = process.env.NEXT_PUBLIC_STT_PROVIDER === "openai";
-const TRANSCRIBE_TIMEOUT_MS = 3500;
+// How long a turn waits for OpenAI's text before using the browser's. For testing, set NEXT_PUBLIC_STT_TIMEOUT_MS=30000
+// (then the console shows how long OpenAI really takes). Leave it unset for normal use.
+const TRANSCRIBE_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_STT_TIMEOUT_MS) > 0 ? Number(process.env.NEXT_PUBLIC_STT_TIMEOUT_MS) : 3500;
 
 interface RecognitionResult {
   isFinal: boolean;
