@@ -1,6 +1,7 @@
 import { encodeWav16, plausibleTranscript, trimSilence } from "./audio";
 import { PcmRecorder, recorderSupported } from "./recorder";
 import { punctuateTurn } from "./punctuate";
+import { encodeOggOpus } from "./opus";
 import { DEFAULT_TURN_TIMING, waitAfterPhraseMs, type TurnTimingConfig } from "./turnTiming";
 import { createSynth, speechOutputSupported } from "./synthFactory";
 import type { SpeakSpan, Synth, UserUtterance, VoiceAdapter, VoiceStartOptions } from "./types";
@@ -278,14 +279,18 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     const pcm = rec.slice(from, to);
     const range = trimSilence(pcm, rec.sampleRate);
     if (!range) return ""; // no real speech in this bit of the recording, so there is nothing to transcribe
-    const wav = encodeWav16(pcm.subarray(range.start, range.end), rec.sampleRate);
+    const speech = pcm.subarray(range.start, range.end);
 
-    const form = new FormData();
-    form.append("audio", new Blob([wav as unknown as BlobPart], { type: "audio/wav" }), "speech.wav");
-    const abort = new AbortController();
-    const timer = setTimeout(() => abort.abort(), TRANSCRIBE_TIMEOUT_MS);
+    // Compress it first (about ten times smaller): on a normal home connection the upload is what takes the time, not the
+    // transcription. If this browser can't, send the uncompressed WAV.
     const started = performance.now();
     const took = () => Math.round(performance.now() - started);
+    const ogg = await encodeOggOpus(speech, rec.sampleRate).catch(() => null);
+    const form = new FormData();
+    if (ogg) form.append("audio", new Blob([ogg as unknown as BlobPart], { type: "audio/ogg" }), "speech.ogg");
+    else form.append("audio", new Blob([encodeWav16(speech, rec.sampleRate) as unknown as BlobPart], { type: "audio/wav" }), "speech.wav");
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), TRANSCRIBE_TIMEOUT_MS);
     this.inflight += 1;
     try {
       const res = await fetch("/api/transcribe", { method: "POST", body: form, signal: abort.signal });
@@ -294,7 +299,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
         return null;
       }
       const data = (await res.json()) as { text?: string };
-      console.log(`[stt] OpenAI transcription ${took()} ms`);
+      console.log(`[stt] OpenAI transcription ${took()} ms (${ogg ? `${Math.round(ogg.length / 1024)} KB compressed` : "uncompressed"})`);
       return data.text?.trim() ?? "";
     } catch {
       console.warn(`[stt] OpenAI transcription gave up after ${took()} ms (limit ${TRANSCRIBE_TIMEOUT_MS} ms), keeping the browser's text (no punctuation or fillers)`);
