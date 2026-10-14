@@ -14,7 +14,7 @@ interface Props {
   sessionId: string;
   interrupted: boolean;
   prospect: { name: string; title: string; company: string; sizeLabel: string; deptLabel: string };
-  scenario: { label: string; brief: string; success: string; limitMs: number };
+  scenario: { label: string; brief: string; success: string; limitMs: number; notes: string[] | null };
   personality: string;
   portrait: string | null;
   /** Short acknowledgements ("Mm.", "Right.") played if the prospect is slow to answer. */
@@ -63,6 +63,20 @@ type StreamEvent =
 const MIN_CHUNK = 25; // characters; avoids speaking tiny one-word chunks
 const MIN_FIRST_CHUNK = 6; // the first chunk is allowed to be shorter, so the prospect starts talking sooner
 const FILLER_DELAY_MS = 700; // if the reply has not started this long after the rep stops, play a quick "mm" / "right"
+
+/** What the rep wrote down on the earlier call (demo and objection-handling scenarios). */
+function Notes({ notes, compact = false }: { notes: string[]; compact?: boolean }) {
+  return (
+    <div className={compact ? "mt-2" : "mt-3 rounded-md bg-amber-50 px-3 py-2"}>
+      {!compact && <p className="text-sm font-medium text-amber-900">Your notes from the earlier call</p>}
+      <ul className={`mt-1 list-disc space-y-0.5 pl-5 text-sm ${compact ? "text-slate-700" : "text-amber-900"}`}>
+        {notes.map((n) => (
+          <li key={n}>{n}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 function fmt(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -706,6 +720,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
           </div>
           <hr className="my-4 border-slate-200" />
           <p className="text-slate-700">{scenario.brief}</p>
+          {scenario.notes && <Notes notes={scenario.notes} />}
           <p className="mt-3 rounded-md bg-indigo-50 px-3 py-2 text-sm text-indigo-900">
             <strong>To pass:</strong> {scenario.success}
           </p>
@@ -770,6 +785,12 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       <p className="mt-2 text-sm font-medium text-indigo-700" aria-live="polite">
         {status}
       </p>
+      {scenario.notes && (
+        <details className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+          <summary className="cursor-pointer font-medium text-slate-700">Your notes from the earlier call</summary>
+          <Notes notes={scenario.notes} compact />
+        </details>
+      )}
 
       <div className="mt-3 h-[26rem] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         {lines.length === 0 && <p className="text-slate-400">Waiting for {prospect.name} to pick up…</p>}
