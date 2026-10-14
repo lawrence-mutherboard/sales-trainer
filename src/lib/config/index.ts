@@ -11,6 +11,7 @@ import examplesJson from "../../../config/roleplay_examples.json";
 import correctionsJson from "../../../config/speech_corrections.json";
 import silenceJson from "../../../config/silence.json";
 import callJson from "../../../config/call.json";
+import teamJson from "../../../config/team.json";
 import listeningJson from "../../../config/listening.json";
 import benchmarksJson from "../../../config/benchmarks.json";
 
@@ -250,6 +251,11 @@ const silence = z.object({
   }),
 });
 
+const team = z.object({
+  managers: z.array(z.string()),
+  inactive_after_days: z.number().min(1),
+});
+
 const call = z.object({
   ring: z.object({ enabled: z.boolean(), min_rings: z.number().int().min(1), max_rings: z.number().int().min(1), volume: z.number().min(0).max(1) }),
   ambience: z.object({ enabled: z.boolean(), volume: z.number().min(0).max(0.3), only_with_headphones: z.boolean() }),
@@ -265,6 +271,7 @@ const examples = z.object({
 export const config = {
   silence: silence.parse(silenceJson),
   call: call.parse(callJson),
+  team: team.parse(teamJson),
   benchmarks: z
     .object({
       sources: z.array(z.object({ label: z.string(), url: z.string() })),

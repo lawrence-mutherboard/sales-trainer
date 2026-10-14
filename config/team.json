@@ -1,0 +1,5 @@
+{
+  "_help": "Who can see the Team pages (everyone's calls, scores and progress). Managers can also practise like anyone else. Emails are matched exactly, ignoring capitals. On Render you can override this list without a code change by setting MANAGER_EMAILS to a comma-separated list.",
+  "managers": ["lawrence@mutherboard.com", "tania@mutherboard.com"],
+  "inactive_after_days": 7
+}

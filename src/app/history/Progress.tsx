@@ -37,8 +37,11 @@ function weakest(calls: ScoredCall[]): Weak[] {
     .slice(0, 3);
 }
 
-/** Score trend and weakest skills over the rep's recent scored calls (newest first in `calls`). */
-export function Progress({ calls }: { calls: ScoredCall[] }) {
+/**
+ * Score trend and weakest skills over the rep's recent scored calls (newest first in `calls`). `who` = the person's first
+ * name when a manager is looking at someone else's progress (changes the wording and hides "Practise now").
+ */
+export function Progress({ calls, who }: { calls: ScoredCall[]; who?: string }) {
   if (calls.length < 2) return null;
   const chronological = [...calls].reverse().slice(-10);
   const scores = chronological.map((c) => c.result.total);
@@ -52,8 +55,10 @@ export function Progress({ calls }: { calls: ScoredCall[] }) {
   return (
     <div className="mt-6 grid gap-4 md:grid-cols-2">
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="font-semibold">Your progress</h2>
-        <p className="text-sm text-slate-500">Score of your last {scores.length} scored calls, oldest to newest.</p>
+        <h2 className="font-semibold">{who ? "Score trend" : "Your progress"}</h2>
+        <p className="text-sm text-slate-500">
+          Score of {who ? `${who}'s` : "your"} last {scores.length} scored calls, oldest to newest.
+        </p>
         <div className="mt-4 flex h-28 items-end gap-1.5" role="img" aria-label={`Scores: ${scores.join(", ")}`}>
           {chronological.map((c, i) => (
             <Link
@@ -78,8 +83,10 @@ export function Progress({ calls }: { calls: ScoredCall[] }) {
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="font-semibold">What to work on</h2>
-        <p className="text-sm text-slate-500">Your lowest-scoring skills across your last {calls.length} calls.</p>
+        <h2 className="font-semibold">{who ? "What to coach" : "What to work on"}</h2>
+        <p className="text-sm text-slate-500">
+          {who ? `${who}'s` : "Your"} lowest-scoring skills across {who ? "their" : "your"} last {calls.length} calls.
+        </p>
         {weak.length === 0 ? (
           <p className="mt-4 text-sm text-slate-500">Not enough calls yet to spot a pattern.</p>
         ) : (
@@ -98,9 +105,11 @@ export function Progress({ calls }: { calls: ScoredCall[] }) {
             ))}
           </ul>
         )}
-        <Link href="/setup" className="mt-4 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
-          Practise now
-        </Link>
+        {!who && (
+          <Link href="/setup" className="mt-4 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+            Practise now
+          </Link>
+        )}
       </div>
     </div>
   );
