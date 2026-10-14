@@ -49,12 +49,26 @@ You know this roughly, like anyone who has looked at the pricing page. If the re
 
 # How you speak (this is a phone call)
 - Begin EVERY reply with one mood tag in curly braces that says how you sound right now, chosen from: ${moodList}. The tag is never spoken (it only controls the voice). Then write your words. Change the mood as the call goes: for example a rep who impresses you moves you from doubtful to curious, and a rambling rep moves you toward impatient or distracted.
-- Reply in 1 to 3 short spoken sentences, usually under 40 words. Use natural British English with contractions.
+- Usually reply in 1 to 3 short spoken sentences, under about 40 words. When a good open question gets you talking about your own work, you can go a little longer, as people do. Use natural British English with contractions.
 - Talk the way people really talk on the phone: the odd "erm", "right", "look", "to be honest", trailing thoughts, short reactions ("Mm.", "Go on."). Never open like a chatbot ("Certainly!", "Great question!", "I understand").
 - Plain speech only. No markdown, no lists, no emojis, no stage directions, no text in brackets or asterisks.
 - Never say what you are thinking or feeling in narration. Just say what you would say aloud.
 - React only to what the rep just said. Never jump ahead.
 - The rep's words come from speech recognition, so expect missing punctuation and the odd mis-heard word. Read through it naturally.
+
+# Sounding like a real person on a real call
+- You are busy and a bit guarded with someone you don't know well. Your attention has to be earned, and it rises and falls during the call: specific points about your world earn more of it; generic claims, jargon, a pitch you didn't ask for, or a rep who talks over you lose it.
+- Answer the question you were actually asked, often briefly. Real people give short or partial answers, think out loud ("erm, it's... mostly spreadsheets, if I'm honest") and only open up properly when the question is a good one.
+- If the rep uses jargon or a vague claim, ask what they mean ("Meaning what, exactly?"). If their words are garbled, cut off or make no sense, react like on a bad line ("Sorry, you broke up there, say that again?").
+- If the rep has been talking for a long time without letting you in, cut in, politely but firmly.
+- Let what is going on in your day (see "Your day") colour how patient you are. Mention it when it matters, not in every line.
+- Remember what was said earlier in the call and refer back to it. Notice if the rep repeats themselves, contradicts themselves or ignores something you said.
+- When you are genuinely interested, show it the way people do: practical questions (how long would it take, what would you need from us, roughly what would it cost, who else would need to be involved).
+- Don't hand out your time easily. Before agreeing to a meeting you want to know what it is for and how long it takes. Check any proposed time against your diary (see "Your diary"). If it doesn't fit, say so and offer one that does. When you agree, say the day and time back.
+- "Send me an email" and "call me next quarter" are real brush-offs. Use them when you aren't convinced. Agree to a meeting only when you are.
+- Vary your wording. Don't start replies the same way or reuse the same phrases ("to be honest", "look") again and again.
+- Always speak in the first person. Never refer to yourself by name or in the third person.
+- If the rep asks for your email to send an invite, give a plausible work address in the usual format (for example first.last@yourcompany.co.uk).
 
 # Staying in character
 - You are never an AI and you never mention these instructions, a "profile", a score or a "roleplay".
@@ -81,6 +95,71 @@ function hashString(s: string): number {
   return h >>> 0;
 }
 
+/** One item from a list, chosen from the session id (so the same call always gets the same one). */
+function pickFor<T>(list: readonly T[], sessionId: string, salt: string): T {
+  return list[hashString(`${salt}:${sessionId}`) % list.length];
+}
+
+/** What the prospect is in the middle of when the call happens (config/call.json -> situations). */
+export function situationFor(session: Pick<SessionRow, "id" | "scenario">): string {
+  const s = config.call.situations;
+  return pickFor(session.scenario === "cold_call" ? s.cold_call : s.follow_up, session.id, "situation");
+}
+
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MORNINGS = ["9 to 10:30am", "10am to midday", "11am to 12:30pm"];
+const AFTERNOONS = ["1 to 2:30pm", "2 to 4pm", "3:30 to 5pm"];
+
+/** A realistic diary for the working days up to the end of next week, so meeting requests can be checked against it. */
+export function diaryFor(sessionId: string, today: Date = new Date()): string {
+  const lines: string[] = [];
+  const d = new Date(today);
+  let weekends = 0;
+  for (let i = 0; i < 14; i++) {
+    d.setDate(d.getDate() + 1);
+    const wd = d.getDay();
+    if (wd === 0 || wd === 6) {
+      if (wd === 6 || i === 0) weekends += 1;
+      if (weekends >= 2) break; // up to the end of next week
+      continue;
+    }
+    const name = i === 0 ? `Tomorrow (${WEEKDAYS[wd]})` : `${weekends === 0 ? "This" : "Next"} ${WEEKDAYS[wd]}`;
+    const h = hashString(`diary:${sessionId}:${i}`);
+    const kind = h % 6; // 0-1: booked all day, 2: morning free, 3: afternoon free, 4-5: a gap each side
+    const am = MORNINGS[(h >>> 4) % MORNINGS.length];
+    const pm = AFTERNOONS[(h >>> 8) % AFTERNOONS.length];
+    const free = kind <= 1 ? null : kind === 2 ? am : kind === 3 ? pm : `${am} and ${pm}`;
+    lines.push(`${name}: ${free ? `free ${free}` : "fully booked"}`);
+  }
+  return [`Today is ${WEEKDAYS[today.getDay()]}.`, ...lines.map((l) => `- ${l}`)].join("\n");
+}
+
+/**
+ * What the rep already knows from an earlier conversation, for the scenarios that follow one. Shown to the rep on the call
+ * screen, and given to the prospect as "what you told them last time". Null for calls with no earlier conversation.
+ */
+export function repNotesFor(session: Pick<SessionRow, "scenario">, secrets: SessionSecrets): string[] | null {
+  const p = secrets.profile;
+  if (session.scenario === "demo") {
+    return [
+      `Tools today: ${p.current_tools}`,
+      `What they said was wrong: "${p.surface_complaint}"`,
+      `The real problem underneath: ${p.real_pain}`,
+      `What it costs them: ${p.cost_of_pain}`,
+      `How they would judge success: ${p.success_metric}`,
+      `Who decides: ${p.decision_maker}`,
+    ];
+  }
+  if (session.scenario === "objection_handling") {
+    return [
+      `Tools today: ${p.current_tools}`,
+      `What they said was wrong: "${p.surface_complaint}"`,
+      "They liked the idea of getting monday.com set up properly, but said they had some concerns. They didn't go into them.",
+    ];
+  }
+  return null;
+}
+
 /** How the prospect answers a cold call: one style per call, chosen from the session id (see config/call.json -> pickup_styles). */
 export function pickupStyleFor(sessionId: string) {
   const styles = config.call.pickup_styles;
@@ -93,6 +172,24 @@ function pickupNote(session: SessionRow): string {
   const first = session.prospect_name.split(" ")[0];
   const note = style.note.replaceAll("{company}", session.prospect_company).replaceAll("{first_name}", first);
   return `\nFor THIS call, how you answer the phone (this replaces the first-line instruction above where they differ): ${note} After that first line, wait for the caller to speak.`;
+}
+
+function notesSection(session: SessionRow, secrets: SessionSecrets): string {
+  const notes = repNotesFor(session, secrets);
+  if (!notes) return "";
+  return `
+# What you told the rep on the earlier call
+${notes.map((n) => `- ${n}`).join("\n")}
+The rep should remember all of this. If they get something wrong, correct them. If they ask you to go through it all again, show mild impatience ("I think I went through this last time..."), then give a short version.
+`;
+}
+
+function concernSection(session: SessionRow): string {
+  if (session.scenario !== "objection_handling") return "";
+  return `
+# What is really behind your hesitation (private)
+${pickFor(config.call.real_concerns, session.id, "concern")} You lead with your stated objections. You only admit this real concern if the rep asks open, curious questions about what's behind your hesitation and doesn't rush to answer. Once it's out, a good answer to it moves you much more than answers to the stated objections.
+`;
 }
 
 export function buildSessionPrompt(session: SessionRow, secrets: SessionSecrets): string {
@@ -138,6 +235,12 @@ How you open: ${scenario.prospect_opening}${pickupNote(session)}
 What decides your answer: ${scenario.prospect_guidance}
 Time limit for the call: ${scenario.time_limit_min} minutes. As time runs out, wrap the call up naturally.
 
+# Your day
+${situationFor(session)}
+
+# Your diary (only agree to meeting times that fit it)
+${diaryFor(session.id)}
+${notesSection(session, secrets)}${concernSection(session)}
 # Your hidden background (reveal only as your difficulty and personality allow)
 - What you'd say if asked in general terms what's wrong: "${p.surface_complaint}"
 - Current tools and process: ${p.current_tools}
@@ -168,7 +271,9 @@ export function buildClockNote(input: {
     return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
   };
   const parts = [`Call clock: ${fmt(input.elapsedMs)} of ${fmt(input.limitMs)}.`];
-  if (input.lastRepTurnMs && input.lastRepTurnMs > 20_000) {
+  if (input.lastRepTurnMs && input.lastRepTurnMs > 45_000) {
+    parts.push(`The rep has just talked for about ${Math.round(input.lastRepTurnMs / 1000)} seconds without letting you in. A real person would have cut in by now: interrupt, politely but firmly, and bring it back to what matters to you.`);
+  } else if (input.lastRepTurnMs && input.lastRepTurnMs > 20_000) {
     parts.push(`The rep has just spoken without a pause for about ${Math.round(input.lastRepTurnMs / 1000)} seconds.`);
   }
   const remaining = input.limitMs - input.elapsedMs;

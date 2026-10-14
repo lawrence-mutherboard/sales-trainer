@@ -254,6 +254,8 @@ const call = z.object({
   ring: z.object({ enabled: z.boolean(), min_rings: z.number().int().min(1), max_rings: z.number().int().min(1), volume: z.number().min(0).max(1) }),
   ambience: z.object({ enabled: z.boolean(), volume: z.number().min(0).max(0.3), only_with_headphones: z.boolean() }),
   pickup_styles: z.array(z.object({ id: z.string(), note: z.string() })).min(1),
+  situations: z.object({ cold_call: z.array(z.string()).min(1), follow_up: z.array(z.string()).min(1) }),
+  real_concerns: z.array(z.string()).min(1),
 });
 
 const examples = z.object({

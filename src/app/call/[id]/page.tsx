@@ -5,6 +5,9 @@ import { getSetupOptions } from "@/lib/config/public";
 import { pickPortrait } from "@/lib/portrait";
 import type { SessionRow } from "@/lib/types";
 import { CallClient } from "./CallClient";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { repNotesFor } from "@/lib/ai/prospectPrompt";
+import type { SessionSecrets } from "@/lib/types";
 import { TABLES } from "@/lib/db/tables";
 
 export default async function CallPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,6 +23,12 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
   if (session.status === "ended" || session.status === "scored" || session.status === "score_failed") {
     redirect(`/report/${id}`);
   }
+
+  // Notes from the earlier conversation (demo and objection-handling calls). The session row above was read with the rep's own
+  // permissions, so it is theirs; only these few lines of the hidden profile are passed to the page.
+  const { data: secretRow } = await supabaseAdmin().from(TABLES.secrets).select("hidden_profile").eq("session_id", id).maybeSingle();
+  const secrets = (secretRow as { hidden_profile: SessionSecrets } | null)?.hidden_profile;
+  const notes = secrets ? repNotesFor(session, secrets) : null;
 
   const options = getSetupOptions();
   const scenario = options.scenarios.find((s) => s.value === session.scenario);
@@ -42,6 +51,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
         brief: scenario?.brief ?? "",
         success: scenario?.success ?? "",
         limitMs: (scenario?.minutes ?? 5) * 60_000,
+        notes,
       }}
       personality={session.personality}
       portrait={pickPortrait(session.prospect_name)}

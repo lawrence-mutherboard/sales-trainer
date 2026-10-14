@@ -10,7 +10,7 @@
       "success_condition": "A meeting is booked with a specific date and time.",
       "rep_brief": "You're calling a prospect who has never heard of mutherboard. Earn permission to continue, open with something relevant to them, and book a meeting.",
       "prospect_opening": "The phone rings and you pick up. Your very first line is ONLY a short, casual greeting like 'Hello?' or 'Hi there?'. You have no idea who is calling, so do NOT say your name, job title or company, and do NOT ask who it is in that first line. Then wait for the caller to speak.",
-      "prospect_guidance": "You did not expect this call and you don't know mutherboard. Your default is to get the caller off the phone. You only agree to a meeting if the rep has said something specific and relevant to your department in the first minute, handled your brush-off without being pushy, and asked directly for a meeting. If they do all that, agree to a specific day and time (a weekday, in the next week or so) and confirm it. If they only vaguely suggest 'catching up' without a time, push for specifics or stay non-committal."
+      "prospect_guidance": "You did not expect this call and you don't know mutherboard. Your default is to get the caller off the phone politely and quickly. You only agree to a meeting if the rep has said something specific and relevant to your department early on, handled your brush-off without being pushy, and asked directly for a meeting. Even then, ask what the meeting would cover and how long it is, and agree only to a time that fits your diary (counter-offer one if theirs doesn't fit), then say it back. If they only vaguely suggest 'catching up' without a time, push for specifics or stay non-committal."
     },
     "discovery": {
       "label": "Discovery",
@@ -21,18 +21,18 @@
       "success_condition": "An agreed next step (for example a demo or a scoping session) with a date.",
       "rep_brief": "This is a first scheduled call and the prospect gave you 30 minutes. Uncover their situation, the real problem, its cost, who decides and how, then agree a next step with a date.",
       "prospect_opening": "You've joined a scheduled call. Your very first line is ONLY a short, casual greeting like 'Hi there.' or 'Hello, hi.' Do NOT say your name, job title or company in that first line. Then wait for the rep to run the meeting. You know they are from mutherboard, a monday.com partner, and that you agreed to a call about how you work.",
-      "prospect_guidance": "You agreed to this call because you have some pain, but you haven't made up your mind. Share what you know according to your difficulty and personality. Agree to a next step (for example a demo or a scoping session) only if the rep has uncovered your real pain, made the value clear, and proposed a specific next step. Then agree a date."
+      "prospect_guidance": "You agreed to this call because you have some pain, but you haven't made up your mind. Share what you know according to your difficulty and personality. Agree to a next step (for example a demo or a scoping session) only if the rep has uncovered your real pain, made the value clear, and proposed a specific next step. Then agree a date and time that fits your diary."
     },
     "demo": {
       "label": "Demo",
-      "enabled": false,
+      "enabled": true,
       "module": "demo",
       "time_limit_min": 20,
-      "starting_situation": "Discovery is done. The rep will describe verbally how mutherboard would set up monday.com for you (no screen share).",
+      "starting_situation": "This is the follow-up meeting after a discovery call. The rep (from mutherboard, a monday.com partner) knows your situation from that call and will now talk you through, out loud with no screen share, how they would set monday.com up for you.",
       "success_condition": "The prospect agrees to a scoping session or a proposal.",
-      "rep_brief": "Discovery is done. Describe how mutherboard would set monday.com up for this prospect, tie it to their pain and metrics, and check in as you go. No screen share.",
-      "prospect_opening": "You've joined the follow-up call after an earlier discovery conversation. Greet the rep and let them start. You remember discussing your main pain but not every detail.",
-      "prospect_guidance": "You are evaluating the proposed setup. Ask a couple of product questions. Agree to a scoping session or a proposal only if the walkthrough was tailored to your situation, tied to your metrics and checked in with you. Otherwise stay polite but non-committal."
+      "rep_brief": "This is the follow-up to your discovery call; your notes from it are shown below. Talk the prospect through how mutherboard would set monday.com up for them (no screen share). Tie each part to their problem and how they judge success, check in as you go, answer their questions, and agree a next step (a scoping session or a proposal) with a date.",
+      "prospect_opening": "You've joined the follow-up meeting you agreed to with the mutherboard rep. You know who they are. Your very first line is ONLY a short greeting such as 'Hi, how's it going?' or 'Hello, hi.' Do NOT say your name, job title or company, and do NOT start discussing anything yet. Then wait for the rep to lead.",
+      "prospect_guidance": "You are judging two things: do these people understand your situation, and would the setup they describe actually fix your problem? Interrupt with real questions as they go ('how would that work with what we use now?', 'who maintains that once you've gone?', 'what would my team actually see day to day?', 'how long would that take?'). If they drift into a generic feature tour that isn't about your problem, lose interest and say so. If they get a detail from your earlier call wrong, correct them. At a natural moment, raise one practical worry from someone else in your company. Agree to a scoping session or a proposal, at a time that fits your diary, only if the walkthrough was clearly tailored to your problem and your success measure and they checked in with you along the way. Otherwise stay polite but non-committal ('send me something and I'll take it to the team')."
     },
     "objection_handling": {
       "label": "Objection handling",
@@ -43,7 +43,7 @@
       "success_condition": "The prospect's final stance moves to 'let's continue'.",
       "rep_brief": "You've already spoken with this prospect and they liked the idea of monday.com in principle, but they have concerns. Find out what is behind each one, answer it with evidence, check it is resolved, and move them to 'let's continue'.",
       "prospect_opening": "You've joined a follow-up call with the mutherboard rep you spoke to earlier. You know who they are and remember the earlier conversation in general terms. Your very first line is ONLY a short greeting such as 'Hi, thanks for ringing back.' or 'Hello, hi.' Do NOT say your name, job title or company, and do NOT raise any concern in that first line. Then wait for the rep to speak. After the rep has spoken, say in one short sentence that you like the idea in principle, and raise your first objection in that same reply or the next one. You are the prospect: never act like the sales rep, and never ask who the rep is.",
-      "prospect_guidance": "Raise your objections one at a time, in a row, in your own words. Move to 'let's continue' only if the rep handles them well (acknowledges, asks a question, gives evidence and confirms). Otherwise remain hesitant. You already know who the rep is, so never ask who they are or what company they are from."
+      "prospect_guidance": "Raise your objections one at a time, in your own words and with a reason behind each, the way a person would. Move to 'let's continue' only if the rep handles them well: acknowledges the concern, asks what's behind it, gives a concrete answer, and checks it's resolved. Behind your objections is a real concern (see 'What is really behind your hesitation'): it comes out only if they ask good open questions. If they answer the stated objection without finding the real concern, soften a little but stay hesitant ('Mm, maybe. I'd need to think about it.'). If they brush an objection aside, raise it again later in different words. You already know who the rep is, so never ask who they are or what company they are from."
     },
     "pricing_negotiation": {
       "label": "Pricing negotiation",
