@@ -42,6 +42,7 @@ async function main() {
 
   const variants = [
     { label: `${config.ai.prospect.model} (thinking: ${config.ai.prospect.thinking})`, model: config.ai.prospect.model, thinking: config.ai.prospect.thinking === "between_tools" },
+    { label: `${config.ai.prospect.model} (no thinking)`, model: config.ai.prospect.model, thinking: false },
     { label: "claude-haiku-4-5 (no thinking)", model: "claude-haiku-4-5-20251001", thinking: false },
   ];
 

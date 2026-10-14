@@ -22,6 +22,9 @@ import type { SpeakSpan, Synth, UserUtterance, VoiceAdapter, VoiceStartOptions }
 /** The longest the app will keep a turn open past the normal wait just because the microphone still hears sound. */
 const MAX_EXTRA_WAIT_MS = 8000;
 
+/** At most this many phrase transcriptions at once; a later phrase simply covers more audio. */
+const MAX_PARALLEL_TRANSCRIPTIONS = 2;
+
 const ACCURATE_STT = process.env.NEXT_PUBLIC_STT_PROVIDER === "openai";
 // OpenAI's transcription can take several seconds, so the call never waits for it: it carries on with the browser's text and
 // the better text replaces it in the transcript when it arrives. This is how long we wait for that before giving up.
@@ -92,6 +95,9 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
    */
   private segFrom: number | null = null;
   private segs: Promise<string | null>[] = [];
+  /** Transcriptions currently with OpenAI. Capped, because the browser only allows about 6 requests at once to this app and a
+   * pile of slow ones would hold up the prospect's reply and voice. */
+  private inflight = 0;
   private timing: TurnTimingConfig = DEFAULT_TURN_TIMING;
 
 
@@ -187,7 +193,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
       const stillGuessing = interim.trim().length > 0;
       // Chrome has settled on a phrase and you are paused: transcribe that phrase now, in the background, while we wait
       // to be sure you have finished.
-      if (ACCURATE_STT && this.recorder && gotFinal && !stillGuessing) {
+      if (ACCURATE_STT && this.recorder && gotFinal && !stillGuessing && this.inflight < MAX_PARALLEL_TRANSCRIPTIONS) {
         const from = this.segFrom ?? this.segmentFloor;
         const to = this.recorder.currentSample();
         if (to - from > 0.3 * this.recorder.sampleRate) {
@@ -280,6 +286,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     const timer = setTimeout(() => abort.abort(), TRANSCRIBE_TIMEOUT_MS);
     const started = performance.now();
     const took = () => Math.round(performance.now() - started);
+    this.inflight += 1;
     try {
       const res = await fetch("/api/transcribe", { method: "POST", body: form, signal: abort.signal });
       if (!res.ok) {
@@ -294,6 +301,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
       return null;
     } finally {
       clearTimeout(timer);
+      this.inflight = Math.max(0, this.inflight - 1);
     }
   }
 
