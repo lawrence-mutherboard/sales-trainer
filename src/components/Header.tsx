@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SignOutButton } from "./SignOutButton";
+import { isManager } from "@/lib/team/access";
 
 export async function Header() {
   const supabase = await createSupabaseServerClient();
@@ -22,6 +23,11 @@ export async function Header() {
             <Link href="/history" className="text-slate-700 hover:text-indigo-600">
               My calls
             </Link>
+            {isManager(user.email) && (
+              <Link href="/team" className="font-medium text-slate-700 hover:text-indigo-600">
+                Team
+              </Link>
+            )}
             <span className="hidden text-slate-400 sm:inline">{user.email}</span>
             <SignOutButton />
           </nav>
