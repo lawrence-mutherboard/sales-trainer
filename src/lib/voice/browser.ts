@@ -22,10 +22,13 @@ import type { SpeakSpan, Synth, UserUtterance, VoiceAdapter, VoiceStartOptions }
 /** The longest the app will keep a turn open past the normal wait just because the microphone still hears sound. */
 const MAX_EXTRA_WAIT_MS = 8000;
 
+/** At most this many phrase transcriptions at once; a later phrase simply covers more audio. */
+const MAX_PARALLEL_TRANSCRIPTIONS = 2;
+
 const ACCURATE_STT = process.env.NEXT_PUBLIC_STT_PROVIDER === "openai";
-// How long a turn waits for OpenAI's text before using the browser's. For testing, set NEXT_PUBLIC_STT_TIMEOUT_MS=30000
-// (then the console shows how long OpenAI really takes). Leave it unset for normal use.
-const TRANSCRIBE_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_STT_TIMEOUT_MS) > 0 ? Number(process.env.NEXT_PUBLIC_STT_TIMEOUT_MS) : 3500;
+// OpenAI's transcription can take several seconds, so the call never waits for it: it carries on with the browser's text and
+// the better text replaces it in the transcript when it arrives. This is how long we wait for that before giving up.
+const TRANSCRIBE_TIMEOUT_MS = Number(process.env.NEXT_PUBLIC_STT_TIMEOUT_MS) > 0 ? Number(process.env.NEXT_PUBLIC_STT_TIMEOUT_MS) : 20000;
 
 interface RecognitionResult {
   isFinal: boolean;
@@ -84,11 +87,17 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
   private recorder: PcmRecorder | null = null;
   /** Where in the recording the current turn can start (after the prospect finished talking / the previous turn ended). */
   private segmentFloor = 0;
-  /** A transcription started as soon as you paused, so it is usually ready by the time the turn is confirmed finished. */
-  private spec: { floor: number; endSample: number; promise: Promise<string | null> } | null = null;
-  private flushChain: Promise<void> = Promise.resolve();
-  /** Turns that have ended but are still being transcribed / handed on. While this is above zero the rep is not "silent". */
-  private pendingTurns = 0;
+  /**
+   * Accurate transcription goes phrase by phrase while you talk (each time Chrome settles on a phrase), so only the last short
+   * phrase is left to do when you stop, and every bit of audio is sent exactly once. segFrom is where the next phrase's audio
+   * starts (null = the start of the turn); segs are the transcriptions already on their way. "" = no speech in that bit,
+   * null = it failed.
+   */
+  private segFrom: number | null = null;
+  private segs: Promise<string | null>[] = [];
+  /** Transcriptions currently with OpenAI. Capped, because the browser only allows about 6 requests at once to this app and a
+   * pile of slow ones would hold up the prospect's reply and voice. */
+  private inflight = 0;
   private timing: TurnTimingConfig = DEFAULT_TURN_TIMING;
 
 
@@ -165,11 +174,13 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
       if (this.bufStart == null) this.bufStart = at;
 
       let interim = "";
+      let gotFinal = false;
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
         if (r.isFinal) {
           const t = r[0].transcript.trim();
           if (t) {
+            gotFinal = true;
             this.pieces.push(t);
             this.buffer += `${this.buffer ? " " : ""}${t}`;
           }
@@ -180,13 +191,15 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
       if (live) this.interimCbs.forEach((cb) => cb(live));
 
       const stillGuessing = interim.trim().length > 0;
-      // More speech invalidates any transcription started earlier. Once Chrome has settled on a phrase, start
-      // transcribing it now, in the background, while we wait to be sure you have finished.
-      this.spec = null;
-      if (ACCURATE_STT && this.recorder && !stillGuessing && this.buffer) {
-        const floor = this.segmentFloor;
-        const endSample = this.recorder.currentSample();
-        this.spec = { floor, endSample, promise: this.transcribe(floor, endSample) };
+      // Chrome has settled on a phrase and you are paused: transcribe that phrase now, in the background, while we wait
+      // to be sure you have finished.
+      if (ACCURATE_STT && this.recorder && gotFinal && !stillGuessing && this.inflight < MAX_PARALLEL_TRANSCRIPTIONS) {
+        const from = this.segFrom ?? this.segmentFloor;
+        const to = this.recorder.currentSample();
+        if (to - from > 0.3 * this.recorder.sampleRate) {
+          this.segs.push(this.transcribe(from, to));
+          this.segFrom = to;
+        }
       }
       this.armFlush(stillGuessing);
     };
@@ -250,7 +263,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
    * turn that is being transcribed. The "are you still there?" countdown must not run during this time.
    */
   isTurnPending(): boolean {
-    return this.pendingTurns > 0 || this.buffer.trim().length > 0 || this.flushTimer !== null;
+    return this.buffer.trim().length > 0 || this.flushTimer !== null;
   }
 
   /** True if the microphone is hearing the rep right now. */
@@ -264,7 +277,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     if (!rec) return null;
     const pcm = rec.slice(from, to);
     const range = trimSilence(pcm, rec.sampleRate);
-    if (!range) return null; // no real speech in the recording, so there is nothing to transcribe
+    if (!range) return ""; // no real speech in this bit of the recording, so there is nothing to transcribe
     const wav = encodeWav16(pcm.subarray(range.start, range.end), rec.sampleRate);
 
     const form = new FormData();
@@ -273,6 +286,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     const timer = setTimeout(() => abort.abort(), TRANSCRIBE_TIMEOUT_MS);
     const started = performance.now();
     const took = () => Math.round(performance.now() - started);
+    this.inflight += 1;
     try {
       const res = await fetch("/api/transcribe", { method: "POST", body: form, signal: abort.signal });
       if (!res.ok) {
@@ -281,12 +295,13 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
       }
       const data = (await res.json()) as { text?: string };
       console.log(`[stt] OpenAI transcription ${took()} ms`);
-      return data.text?.trim() || null;
+      return data.text?.trim() ?? "";
     } catch {
-      console.warn(`[stt] OpenAI transcription gave up after ${took()} ms (limit ${TRANSCRIBE_TIMEOUT_MS} ms), using the browser's text (no punctuation or fillers)`);
+      console.warn(`[stt] OpenAI transcription gave up after ${took()} ms (limit ${TRANSCRIBE_TIMEOUT_MS} ms), keeping the browser's text (no punctuation or fillers)`);
       return null;
     } finally {
       clearTimeout(timer);
+      this.inflight = Math.max(0, this.inflight - 1);
     }
   }
 
@@ -299,11 +314,12 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     const text = punctuateTurn(this.pieces) || this.buffer.trim();
     const startedMs = this.bufStart ?? this.lastResultAt;
     const endedMs = Math.max(this.lastResultAt, startedMs);
-    const spec = this.spec;
     const rec = this.recorder;
-    const floor = this.segmentFloor;
+    const from = this.segFrom ?? this.segmentFloor;
     const endSample = rec ? rec.currentSample() : 0;
-    this.spec = null;
+    const segs = this.segs;
+    this.segs = [];
+    this.segFrom = null;
     this.buffer = "";
     this.pieces = [];
     this.bufStart = null;
@@ -311,20 +327,21 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     if (rec) this.segmentFloor = endSample; // the next turn starts where this one ended
     this.interimCbs.forEach((cb) => cb(""));
 
-    // Turns are handed on in order, even if one transcription takes longer than the next.
-    this.pendingTurns += 1;
-    this.flushChain = this.flushChain.then(async () => {
-      let finalText = text;
-      if (rec && ACCURATE_STT) {
-        const reusable = spec !== null && spec.floor === floor && endSample - spec.endSample < 0.4 * rec.sampleRate;
-        const better = await (reusable ? spec.promise : this.transcribe(floor, endSample));
-        if (better && plausibleTranscript(better, text)) finalText = better;
-        else if (better) console.warn("Ignoring an implausible transcription", { better, browser: text });
-      }
-      this.speechCbs.forEach((cb) => cb({ text: finalText, startedMs, endedMs }));
-    }).finally(() => {
-      this.pendingTurns = Math.max(0, this.pendingTurns - 1);
-    });
+    // The call carries on at once with the browser's text. The accurate text (punctuated, with fillers) arrives later
+    // and replaces it in the transcript. Most of it is already being transcribed, phrase by phrase.
+    let better: Promise<string | null> | undefined;
+    if (rec && ACCURATE_STT) {
+      if (endSample - from > 0.2 * rec.sampleRate) segs.push(this.transcribe(from, endSample)); // the last phrase
+      better = Promise.all(segs).then((parts) => {
+        if (parts.length === 0 || parts.some((p) => p === null)) return null; // one failed: keep the browser's text
+        const joined = parts.filter(Boolean).join(" ").trim();
+        if (!joined) return null;
+        if (plausibleTranscript(joined, text)) return joined;
+        console.warn("Ignoring an implausible transcription", { better: joined, browser: text });
+        return null;
+      });
+    }
+    this.speechCbs.forEach((cb) => cb({ text, startedMs, endedMs, better }));
   }
 
   /** The mic is muted while the prospect talks, so the app can't hear the speakers. Use headphones. */

@@ -110,6 +110,8 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   const gateRef = useRef<Promise<void>>(Promise.resolve());
   /** True while one of the prospect's "are you still there?" lines is being spoken. */
   const nudgeSpeakingRef = useRef(false);
+  /** Accurate transcripts still on their way; the call end waits briefly for them so the report uses them. */
+  const refinePending = useRef<Set<Promise<void>>>(new Set());
 
   // Mutable call state lives in refs so async callbacks never see stale values.
   const adapterRef = useRef<VoiceAdapter | null>(null);
@@ -178,6 +180,11 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       unsubsRef.current.forEach((u) => u());
       unsubsRef.current = [];
 
+      // Give the accurate transcripts of your last sentences a few seconds to arrive, so the score uses them.
+      if (refinePending.current.size > 0) {
+        await Promise.race([Promise.allSettled([...refinePending.current]), new Promise((r) => setTimeout(r, 12_000))]);
+      }
+
       try {
         await fetch(`/api/session/${sessionId}/end`, {
           method: "POST",
@@ -216,6 +223,8 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       const body = isRetry && serverHasRepRef.current ? { nowMs: now(), inputMode: modeRef.current } : { ...payload, nowMs: now(), inputMode: modeRef.current };
 
       const lineId = ++lineKey.current;
+      const tReq = now(); // when the app sent the rep's words to Claude
+      let tDelta = 0; // when Claude's first words came back
       let started = false;
       let pendingSentence = "";
       let carry = "";
@@ -314,6 +323,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
             } else if (ev.t === "delta") {
               if (!started) {
                 started = true;
+                tDelta = now();
                 if (fillerTimer) clearTimeout(fillerTimer);
                 setThinking(false);
                 setLines((l) => [...l, { key: lineId, speaker: "prospect", text: ev.text }]);
@@ -345,6 +355,14 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
 
         // Wait for the prospect to finish talking, then record how long they spoke (for the talk ratio).
         const spans = await Promise.all(spoken);
+        if (payload.endedMs != null && spans.length) {
+          // The one number that matters: how long after you stopped speaking did the prospect start talking?
+          const audioAt = Math.min(...spans.map((s) => s.startedMs));
+          console.log(
+            `[timing] prospect started talking ${((audioAt - payload.endedMs) / 1000).toFixed(1)} s after you stopped: ` +
+              `${tReq - payload.endedMs} ms waiting to be sure you'd finished, ${tDelta - tReq} ms for Claude's first words, ${audioAt - tDelta} ms for the voice`,
+          );
+        }
         if (spans.length && doneIdx >= 0) {
           timingsRef.current.push({
             idx: doneIdx,
@@ -498,7 +516,30 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
           // Fix words the recogniser often mishears ("bed time" -> "bad time", "motherboard" -> "mutherboard").
           const u = { ...raw, text: applyCorrections(raw.text, corrections) };
           setInterim("");
-          setLines((l) => [...l, { key: ++lineKey.current, speaker: "rep", text: u.text }]);
+          const lineId = ++lineKey.current;
+          setLines((l) => [...l, { key: lineId, speaker: "rep", text: u.text }]);
+          if (raw.better) {
+            // The accurate version (punctuated, with fillers) arrives a few seconds later: swap it into the transcript and save it.
+            const original = u.text;
+            const job: Promise<void> = raw.better
+              .then(async (b) => {
+                const fixed = b ? applyCorrections(b, corrections) : null;
+                if (!fixed || fixed === original) return;
+                setLines((l) => l.map((x) => (x.key === lineId ? { ...x, text: fixed } : x)));
+                for (let attempt = 0; attempt < 2; attempt++) {
+                  const res = await fetch(`/api/session/${sessionId}/refine`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ original, better: fixed }),
+                  }).catch(() => null);
+                  if (res?.ok || res?.status !== 404) return;
+                  await new Promise((r) => setTimeout(r, 2000)); // the turn may not have been saved yet
+                }
+              })
+              .catch(() => undefined)
+              .finally(() => void refinePending.current.delete(job));
+            refinePending.current.add(job);
+          }
           if (busyRef.current) {
             const p = pendingRef.current;
             pendingRef.current = p
@@ -540,6 +581,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         gateRef.current = rb.done;
         ringingRef.current = true;
         setRinging(true);
+        void fetch("/api/warm", { method: "POST" }).catch(() => undefined); // open the connections the first sentence needs
         void requestReply({});
         await rb.done;
         ringRef.current = null;

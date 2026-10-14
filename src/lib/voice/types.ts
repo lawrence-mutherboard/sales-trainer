@@ -7,6 +7,11 @@ export interface UserUtterance {
   text: string;
   startedMs: number;
   endedMs: number;
+  /**
+   * A more accurate version of the same words (punctuated, with fillers), which arrives a few seconds later. Resolves to null
+   * if there is none. The call carries on with `text` straight away; this only improves the transcript.
+   */
+  better?: Promise<string | null>;
 }
 
 export interface SpeakSpan {
