@@ -99,6 +99,11 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
   /** Transcriptions currently with OpenAI. Capped, because the browser only allows about 6 requests at once to this app and a
    * pile of slow ones would hold up the prospect's reply and voice. */
   private inflight = 0;
+  private accurateWaitMs = 0;
+  private getContext: (() => string) | null = null;
+  /** Finished turns that are waiting briefly for their accurate text before being handed on. */
+  private pendingEmits = 0;
+  private emitChain: Promise<void> = Promise.resolve();
   private timing: TurnTimingConfig = DEFAULT_TURN_TIMING;
 
 
@@ -136,6 +141,8 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     this.now = opts.now;
     this.headphones = Boolean(opts.headphones);
     this.timing = opts.turnTiming ?? DEFAULT_TURN_TIMING;
+    this.accurateWaitMs = opts.accurateWaitMs ?? 0;
+    this.getContext = opts.getContext ?? null;
 
     // Ask for the mic up front so a blocked mic gives a clear message before the call starts.
     try {
@@ -264,7 +271,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
    * turn that is being transcribed. The "are you still there?" countdown must not run during this time.
    */
   isTurnPending(): boolean {
-    return this.buffer.trim().length > 0 || this.flushTimer !== null;
+    return this.pendingEmits > 0 || this.buffer.trim().length > 0 || this.flushTimer !== null;
   }
 
   /** True if the microphone is hearing the rep right now. */
@@ -289,6 +296,8 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     const form = new FormData();
     if (ogg) form.append("audio", new Blob([ogg as unknown as BlobPart], { type: "audio/ogg" }), "speech.ogg");
     else form.append("audio", new Blob([encodeWav16(speech, rec.sampleRate) as unknown as BlobPart], { type: "audio/wav" }), "speech.wav");
+    const context = this.getContext?.();
+    if (context) form.append("context", context.slice(0, 400));
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), TRANSCRIBE_TIMEOUT_MS);
     this.inflight += 1;
@@ -346,7 +355,26 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
         return null;
       });
     }
-    this.speechCbs.forEach((cb) => cb({ text, startedMs, endedMs, better }));
+    // At the end of a turn, wait a moment for the accurate text, so the prospect can hear it right. If it isn't ready in time
+    // the prospect replies from the browser's text, and the accurate text replaces it in the transcript when it arrives.
+    // Turns are handed on in order.
+    this.pendingEmits += 1;
+    this.emitChain = this.emitChain
+      .then(async () => {
+        let finalText = text;
+        let late = better;
+        if (better && this.accurateWaitMs > 0) {
+          const first = await Promise.race([better, new Promise<"late">((resolve) => setTimeout(() => resolve("late"), this.accurateWaitMs))]);
+          if (first !== "late") {
+            late = undefined; // already used (or it failed), nothing more to swap in later
+            if (first) finalText = first;
+          }
+        }
+        this.speechCbs.forEach((cb) => cb({ text: finalText, startedMs, endedMs, better: late }));
+      })
+      .finally(() => {
+        this.pendingEmits = Math.max(0, this.pendingEmits - 1);
+      });
   }
 
   /** The mic is muted while the prospect talks, so the app can't hear the speakers. Use headphones. */

@@ -54,6 +54,7 @@ export default async function CallPage({ params }: { params: Promise<{ id: strin
         unfinishedMs: config.listening.unfinished_ms,
       }}
       corrections={config.speechCorrections}
+      sttWaitMs={config.ai.stt.max_wait_ms}
       ring={{
         enabled: config.call.ring.enabled,
         minRings: config.call.ring.min_rings,

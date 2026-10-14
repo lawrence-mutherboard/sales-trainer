@@ -56,6 +56,7 @@ const business = z.object({
 const ai = z.object({
   stt: z.object({
     model: z.string(),
+    max_wait_ms: z.number().min(0),
     prompt: z.string(),
     vocabulary: z.array(z.string()),
   }),
