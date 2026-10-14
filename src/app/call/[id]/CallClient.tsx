@@ -25,6 +25,8 @@ interface Props {
   turnTiming: TurnTimingConfig;
   /** Fixes for words the speech recognition often mishears (from config/speech_corrections.json). */
   corrections: Correction[];
+  /** How long a turn waits for the accurate transcript before the prospect replies (config/ai.json -> stt.max_wait_ms). */
+  sttWaitMs: number;
   /** What the prospect does when the rep goes quiet (from config/silence.json). */
   silence: SilenceConfig;
   /** The ringing before the prospect picks up (from config/call.json). */
@@ -86,7 +88,7 @@ function takeSentences(buf: string, final: boolean): { sentences: string[]; rest
   return { sentences, rest };
 }
 
-export function CallClient({ sessionId, interrupted, prospect, scenario, personality, portrait, fillers, speakMode, turnTiming, corrections, silence, ring }: Props) {
+export function CallClient({ sessionId, interrupted, prospect, scenario, personality, portrait, fillers, speakMode, turnTiming, corrections, sttWaitMs, silence, ring }: Props) {
   const router = useRouter();
 
   const [phase, setPhase] = useState<Phase>("precall");
@@ -110,6 +112,8 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   const gateRef = useRef<Promise<void>>(Promise.resolve());
   /** True while one of the prospect's "are you still there?" lines is being spoken. */
   const nudgeSpeakingRef = useRef(false);
+  /** What the prospect said last, given to the transcriber as context. */
+  const lastProspectRef = useRef("");
   /** Accurate transcripts still on their way; the call end waits briefly for them so the report uses them. */
   const refinePending = useRef<Set<Promise<void>>>(new Set());
 
@@ -226,6 +230,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       const tReq = now(); // when the app sent the rep's words to Claude
       let tDelta = 0; // when Claude's first words came back
       let started = false;
+      let replyText = "";
       let pendingSentence = "";
       let carry = "";
       const spoken: Promise<{ startedMs: number; endedMs: number }>[] = [];
@@ -321,6 +326,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
             if (ev.t === "mood") {
               mood = ev.mood;
             } else if (ev.t === "delta") {
+              replyText += ev.text;
               if (!started) {
                 started = true;
                 tDelta = now();
@@ -351,6 +357,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         }
 
         handleText("", true);
+        if (replyText.trim()) lastProspectRef.current = replyText.trim();
         serverHasRepRef.current = false;
 
         // Wait for the prospect to finish talking, then record how long they spoke (for the talk ratio).
@@ -451,6 +458,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         if (!res.ok) throw new Error(`nudge ${res.status}`);
         const { idx } = (await res.json()) as { idx: number };
         setLines((l) => [...l, { key: ++lineKey.current, speaker: "prospect", text }]);
+        lastProspectRef.current = text;
         timingsRef.current.push({ idx, startedMs: span.startedMs, endedMs: span.endedMs });
       }
     } catch (err) {
@@ -551,9 +559,18 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         }),
       );
 
-      await adapter.start({ now, voiceSeed: prospect.name, personality, headphones: headphonesRef.current, turnTiming });
+      await adapter.start({
+        now,
+        voiceSeed: prospect.name,
+        personality,
+        headphones: headphonesRef.current,
+        turnTiming,
+        accurateWaitMs: sttWaitMs,
+        getContext: () =>
+          `The person being called is ${prospect.name} at ${prospect.company}.${lastProspectRef.current ? ` They just said: "${lastProspectRef.current.slice(-250)}"` : ""}`,
+      });
     },
-    [now, prospect.name, personality, requestReply, corrections, turnTiming],
+    [now, prospect.name, prospect.company, personality, requestReply, corrections, turnTiming, sttWaitMs],
   );
 
   const beginCall = useCallback(

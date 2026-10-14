@@ -34,7 +34,9 @@ export async function POST(req: Request) {
   const parsedMs = Date.now() - t0;
   const stt = config.ai.stt;
   const vocabulary = [...new Set([...stt.vocabulary, ...config.speechCorrections.map((c) => c.said)])];
-  const prompt = `${stt.prompt} Words and names that may come up: ${vocabulary.join(", ")}.`;
+  // Who is being called and what they just said helps with names ("Asana", the prospect's company) and follow-on phrases.
+  const context = String(form?.get("context") ?? "").replace(/\s+/g, " ").trim().slice(0, 400);
+  const prompt = `${stt.prompt}${context ? ` ${context}` : ""} Words and names that may come up: ${vocabulary.join(", ")}.`;
 
   try {
     const body = new FormData();

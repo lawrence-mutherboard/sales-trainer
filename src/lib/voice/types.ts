@@ -30,6 +30,10 @@ export interface VoiceStartOptions {
   headphones?: boolean;
   /** How long to wait after the rep stops before treating their turn as finished (config/listening.json). */
   turnTiming?: import("./turnTiming").TurnTimingConfig;
+  /** How long a turn waits at its end for the accurate transcript before carrying on with the browser's text (0 = never). */
+  accurateWaitMs?: number;
+  /** Short text about the call so far (who is being called, what they just said), sent to the transcriber to help with names. */
+  getContext?: () => string;
 }
 
 export interface VoiceAdapter {
