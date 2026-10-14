@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const form = await req.formData().catch(() => null);
   const audio = form?.get("audio");
   if (!(audio instanceof Blob)) return NextResponse.json({ error: "No audio" }, { status: 400 });
-  if (audio.size < 1000 || audio.size > MAX_BYTES) return NextResponse.json({ error: "Bad audio size" }, { status: 400 });
+  if (audio.size < 200 || audio.size > MAX_BYTES) return NextResponse.json({ error: "Bad audio size" }, { status: 400 });
 
   const parsedMs = Date.now() - t0;
   const stt = config.ai.stt;
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
   try {
     const body = new FormData();
-    body.append("file", audio, "speech.wav");
+    body.append("file", audio, audio.type.includes("ogg") ? "speech.ogg" : "speech.wav");
     body.append("model", stt.model);
     body.append("language", "en");
     body.append("prompt", prompt);
