@@ -40,3 +40,5 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+      - key: MANAGER_EMAILS              # optional; overrides config/team.json (comma-separated)
+        sync: false
