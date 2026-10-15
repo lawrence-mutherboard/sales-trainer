@@ -3,7 +3,7 @@
   "stt": {
     "_help": "Accurate speech-to-text for what the rep says, used when NEXT_PUBLIC_STT_PROVIDER=openai in .env.local (needs OPENAI_API_KEY). Chrome still gives the live captions and spots when you stop talking; each turn is then re-transcribed from the recording. gpt-4o-transcribe is the more accurate model; gpt-4o-mini-transcribe is cheaper and a little less accurate. max_wait_ms: at the end of each turn the app waits up to this long for the accurate text before letting the prospect reply from the browser's text (the accurate text then replaces it in the transcript). 0 = never wait.",
     "model": "gpt-4o-transcribe",
-    "max_wait_ms": 3500,
+    "max_wait_ms": 3000,
     "prompt": "This is a UK business phone call. A salesperson from a company called mutherboard, a monday.com partner, is talking to a prospect about project management, CRM and workflow software. Transcribe exactly what was said, word for word: keep filler words such as um, uh, erm, you know and false starts, and do not tidy up the speech.",
     "vocabulary": [
       "mutherboard",
