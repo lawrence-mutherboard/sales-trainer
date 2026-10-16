@@ -74,12 +74,13 @@ function Group({
   );
 }
 
-export function SetupForm({ options }: { options: SetupOptions }) {
+export function SetupForm({ options, initialScenario }: { options: SetupOptions; initialScenario?: string }) {
   const router = useRouter();
-  const firstEnabled = options.scenarios.find((s) => s.enabled)?.value ?? options.scenarios[0].value;
+  const firstEnabled =
+    options.scenarios.find((s) => s.enabled && s.value === initialScenario)?.value ?? options.scenarios.find((s) => s.enabled)?.value ?? options.scenarios[0].value;
 
-  const [companySize, setCompanySize] = useState(options.sizes[0].value);
-  const [department, setDepartment] = useState(options.departments[0].value);
+  const [companySize, setCompanySize] = useState("random");
+  const [department, setDepartment] = useState("random");
   // Random by default: you rarely know who you're calling.
   const [personality, setPersonality] = useState("random");
   const [scenario, setScenario] = useState(firstEnabled);
@@ -89,14 +90,13 @@ export function SetupForm({ options }: { options: SetupOptions }) {
 
   const selectedScenario = options.scenarios.find((s) => s.value === scenario);
   const label = (list: { value: string; label: string }[], v: string) => list.find((o) => o.value === v)?.label ?? v;
-  const randomPart =
-    personality === "random" && difficulty === "random"
-      ? "their personality or how hard they'll be"
-      : personality === "random"
-        ? "their personality"
-        : difficulty === "random"
-          ? "how hard they'll be"
-          : null;
+  const unknowns = [
+    companySize === "random" && "the company size",
+    department === "random" && "their department",
+    personality === "random" && "their personality",
+    difficulty === "random" && "how hard they'll be",
+  ].filter(Boolean) as string[];
+  const randomPart = unknowns.length ? unknowns.join(", ").replace(/, ([^,]*)$/, " or $1") : null;
 
   async function start() {
     setBusy(true);
@@ -147,9 +147,9 @@ export function SetupForm({ options }: { options: SetupOptions }) {
         {selectedScenario && <p className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">{selectedScenario.brief}</p>}
       </Section>
 
-      <Section step={2} title="Who are you calling?" hint="The kind of company and the department the prospect works in.">
-        <Group title="Company size" value={companySize} onChange={setCompanySize} choices={options.sizes} />
-        <Group title="Department" value={department} onChange={setDepartment} choices={options.departments} />
+      <Section step={2} title="Who are you calling?" hint="Random is on by default. Choose one only if you want to practise a particular kind of company.">
+        <Group title="Company size" value={companySize} onChange={setCompanySize} choices={[RANDOM, ...options.sizes]} />
+        <Group title="Department" value={department} onChange={setDepartment} choices={[RANDOM, ...options.departments]} />
       </Section>
 
       <Section
@@ -170,7 +170,8 @@ export function SetupForm({ options }: { options: SetupOptions }) {
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <p className="text-sm text-slate-600">
-          <strong className="text-slate-900">{selectedScenario?.label}</strong> · {label(options.sizes, companySize)} · {label(options.departments, department)} ·{" "}
+          <strong className="text-slate-900">{selectedScenario?.label}</strong> · {companySize === "random" ? "any size" : label(options.sizes, companySize)} ·{" "}
+          {department === "random" ? "any department" : label(options.departments, department)} ·{" "}
           {personality === "random" ? "random personality" : `${label(options.personalities, personality).toLowerCase()}`} ·{" "}
           {difficulty === "random" ? "random difficulty" : `${label(options.difficulties, difficulty).toLowerCase()}`}
         </p>
@@ -179,7 +180,7 @@ export function SetupForm({ options }: { options: SetupOptions }) {
           disabled={busy}
           className="rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
         >
-          {busy ? "Finding a prospect…" : "Continue"}
+          {busy ? "Finding a prospect…" : "Start"}
         </button>
       </div>
     </div>
