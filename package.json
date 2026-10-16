@@ -24,8 +24,7 @@
     "test:punctuate": "tsx scripts/punctuate-test.ts",
     "test:tidy": "tsx scripts/tidy-test.ts",
     "test:latency": "tsx scripts/latency-test.ts",
-    "simulate": "tsx scripts/simulate-call.ts",
-    "test-accounts": "tsx scripts/test-accounts.ts"
+    "simulate": "tsx scripts/simulate-call.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "latest",
