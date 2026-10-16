@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { SignOutButton } from "./SignOutButton";
-import { isManager } from "@/lib/team/access";
+import { accessFor } from "@/lib/team/access";
 
 export async function Header() {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const access = await accessFor(user);
 
   return (
     <header className="border-b border-slate-200 bg-white">
@@ -23,9 +24,14 @@ export async function Header() {
             <Link href="/history" className="text-slate-700 hover:text-indigo-600">
               My calls
             </Link>
-            {isManager(user.email) && (
+            {access.isManager && (
               <Link href="/team" className="font-medium text-slate-700 hover:text-indigo-600">
                 Team
+              </Link>
+            )}
+            {access.isAdmin && (
+              <Link href="/admin" className="font-medium text-slate-700 hover:text-indigo-600">
+                Admin
               </Link>
             )}
             <span className="hidden text-slate-400 sm:inline">{user.email}</span>

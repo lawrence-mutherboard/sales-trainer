@@ -98,7 +98,10 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                     <Link href={`/team/${r.person.id}?days=${daysParam}`} className="font-medium text-indigo-600 hover:underline">
                       {r.person.name}
                     </Link>
-                    {r.person.isManager && <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-500">Manager</span>}
+                    {(r.person.isAdmin || r.person.isManager) && (
+                      <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase text-slate-500">{r.person.isAdmin ? "Admin" : "Manager"}</span>
+                    )}
+                    {r.person.disabled && <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-[10px] uppercase text-red-700">Access off</span>}
                     <p className="text-xs text-slate-400">{r.person.email}</p>
                   </td>
                   <td className="px-4 py-3">{r.calls}</td>

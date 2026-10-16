@@ -7,7 +7,7 @@ import { ScoreRetry } from "./ScoreRetry";
 import { TABLES } from "@/lib/db/tables";
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { isManager } from "@/lib/team/access";
+import { accessFor } from "@/lib/team/access";
 import { displayName } from "@/lib/team/stats";
 
 export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,7 +23,8 @@ export default async function ReportPage({ params }: { params: Promise<{ id: str
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (isManager(user?.email)) {
+    const access = await accessFor(user);
+    if (access.isManager && !access.disabled) {
       db = supabaseAdmin() as unknown as typeof supabase;
       ({ data: sessionData, error: sessionError } = await db.from(TABLES.sessions).select("*").eq("id", id).maybeSingle());
       if (sessionData) {

@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { siteOrigin } from "@/lib/siteUrl";
 import { isAllowedUser, refusalReason } from "@/lib/authDomain";
+import { isLockedOut } from "@/lib/accessFlags";
 
 const PUBLIC_PATHS = ["/login", "/auth"];
 
@@ -41,6 +42,12 @@ export async function updateSession(request: NextRequest) {
   if (user && !isAllowedUser(user) && !isPublic) {
     if (path.startsWith("/api/")) return NextResponse.json({ error: "Account not allowed" }, { status: 403 });
     return NextResponse.redirect(`${siteOrigin(request)}/login?error=${refusalReason(user)}`);
+  }
+
+  // An admin has turned this person's access off (Admin page).
+  if (user && !isPublic && (await isLockedOut(user))) {
+    if (path.startsWith("/api/")) return NextResponse.json({ error: "Your access to the sales trainer has been turned off." }, { status: 403 });
+    return NextResponse.redirect(`${siteOrigin(request)}/login?error=disabled`);
   }
   return response;
 }

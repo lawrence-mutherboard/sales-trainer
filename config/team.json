@@ -1,5 +1,12 @@
 {
-  "_help": "Who can see the Team pages (everyone's calls, scores and progress). Managers can also practise like anyone else. Emails are matched exactly, ignoring capitals. On Render you can override this list without a code change by setting MANAGER_EMAILS to a comma-separated list.",
-  "managers": ["lawrence@mutherboard.com", "tania@mutherboard.com"],
+  "_help": "Who can do what. admins: can open the Admin page to give or remove manager access and turn anyone's access to the trainer off or on (admins are always managers too, and can't be changed from the page). managers: always managers. Anyone else can be made a manager on the Admin page. Emails are matched ignoring capitals. On Render, ADMIN_EMAILS and MANAGER_EMAILS (comma-separated) override these lists without a code change. inactive_after_days: when the Team page flags someone as not practising.",
+  "admins": [
+    "lawrence@mutherboard.com",
+    "tania@mutherboard.com"
+  ],
+  "managers": [
+    "lawrence@mutherboard.com",
+    "tania@mutherboard.com"
+  ],
   "inactive_after_days": 7
 }
