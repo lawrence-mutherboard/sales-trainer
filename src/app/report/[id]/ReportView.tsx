@@ -111,6 +111,27 @@ export function ReportView({
         {result.success_evidence && <p className="mt-1 text-sm text-slate-500">{result.success_evidence}</p>}
         <p className="mt-4 text-slate-800">{result.summary}</p>
 
+        {result.top_improvements[0] && (
+          <div className="mt-5 rounded-lg border-l-4 border-indigo-500 bg-indigo-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">The one thing to fix next time</p>
+            <p className="mt-1 font-semibold text-slate-900">{result.top_improvements[0].title}</p>
+            {result.top_improvements[0].moment_quote && (
+              <p className="mt-2 text-sm text-slate-600">
+                You said: &ldquo;{result.top_improvements[0].moment_quote}&rdquo;
+                {result.top_improvements[0].turn > 0 && (
+                  <a href={`#turn-${result.top_improvements[0].turn}`} className="ml-2 text-indigo-600 hover:underline">
+                    see it in the transcript
+                  </a>
+                )}
+              </p>
+            )}
+            <p className="mt-1 text-sm text-slate-800">
+              Try instead: <span className="font-medium">&ldquo;{result.top_improvements[0].example_line}&rdquo;</span>
+            </p>
+            {footer && <div className="mt-4">{footer}</div>}
+          </div>
+        )}
+
         {/* Section scores */}
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           {result.sections.map((s) => (

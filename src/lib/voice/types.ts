@@ -63,6 +63,8 @@ export interface VoiceAdapter {
   prepare(texts: string[]): Promise<void>;
   /** Drop anything queued or currently being spoken. */
   cancelSpeech(): void;
+  /** How loud the microphone is right now, 0 to 1 (for the level meter). Optional. */
+  micLevel?(): number;
   /** True if the rep is making sound right now (so the prospect should not talk over them). Optional. */
   isUserSpeaking?(): boolean;
   /** True while the rep's last turn is still being finished or transcribed (so they are not silent). Optional. */
