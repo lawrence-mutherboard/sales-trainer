@@ -274,6 +274,10 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     return this.pendingEmits > 0 || this.buffer.trim().length > 0 || this.flushTimer !== null;
   }
 
+  micLevel(): number {
+    return this.recorder ? Math.min(1, this.recorder.recentRms(150) * 8) : 0;
+  }
+
   /** True if the microphone is hearing the rep right now. */
   isUserSpeaking(): boolean {
     return this.recorder ? this.recorder.isSpeechNow(1000) : false; // 1 s window, so a breath between words doesn't count as silence

@@ -12,7 +12,7 @@ export async function Header() {
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-        <Link href={user ? "/setup" : "/login"} className="text-lg font-semibold tracking-tight text-indigo-600">
+        <Link href={user ? "/" : "/login"} className="text-lg font-semibold tracking-tight text-indigo-600">
           mutherboard <span className="font-normal text-slate-500">Sales Trainer</span>
         </Link>
         {user && (

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { MicCheck } from "./MicCheck";
 import { applyCorrections, type Correction } from "@/lib/voice/corrections";
 import type { TurnTimingConfig } from "@/lib/voice/turnTiming";
 import { pickAccent } from "@/lib/voice/accent";
@@ -119,6 +120,9 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   const [headphones, setHeadphones] = useState(false);
   const headphonesRef = useRef(false);
   const [ringing, setRinging] = useState(false);
+  const [micLevel, setMicLevel] = useState(0);
+  const [showTranscript, setShowTranscript] = useState(true);
+  const [showBrief, setShowBrief] = useState(false);
   const ringingRef = useRef(false);
   const ringRef = useRef<Ringback | null>(null);
   const ambienceRef = useRef<Ambience | null>(null);
@@ -154,6 +158,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   useEffect(() => {
     setVoiceOk(browserVoiceSupported());
     try {
+      if (localStorage.getItem("trainer.transcript") === "0") setShowTranscript(false);
       const saved = localStorage.getItem("trainer.headphones") === "1";
       setHeadphones(saved);
       headphonesRef.current = saved;
@@ -652,6 +657,24 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
     return () => clearInterval(timer);
   }, [phase, now, scenario.limitMs, endCall]);
 
+  function toggleTranscript() {
+    setShowTranscript((v) => {
+      try {
+        localStorage.setItem("trainer.transcript", v ? "0" : "1");
+      } catch {
+        /* ignore */
+      }
+      return !v;
+    });
+  }
+
+  // Microphone level meter during a voice call.
+  useEffect(() => {
+    if (phase !== "live" || mode !== "voice") return;
+    const t = setInterval(() => setMicLevel(adapterRef.current?.micLevel?.() ?? 0), 100);
+    return () => clearInterval(t);
+  }, [phase, mode]);
+
   // Keep the transcript scrolled to the latest line.
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -732,6 +755,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
               Leave this off if you use speakers, or the app will hear the prospect.
             </span>
           </label>
+          {voiceOk && <MicCheck />}
         </div>
 
         {!voiceOk && (
@@ -762,61 +786,86 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   }
 
   // Live call
-  const status = thinking ? "Prospect is thinking…" : speaking ? "Prospect is speaking" : mode === "voice" ? "Listening…" : "Your turn";
+  const remaining = scenario.limitMs - elapsed;
+  const status = thinking
+    ? { text: "Thinking…", cls: "bg-amber-400/20 text-amber-200" }
+    : speaking
+      ? { text: `${prospect.name.split(" ")[0]} is speaking`, cls: "bg-indigo-400/25 text-indigo-100" }
+      : mode === "voice"
+        ? { text: "Your turn · listening", cls: "bg-emerald-400/20 text-emerald-200" }
+        : { text: "Your turn · type below", cls: "bg-emerald-400/20 text-emerald-200" };
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Avatar src={portrait} name={prospect.name} speaking={speaking} size={64} />
-          <div>
-            <h1 className="text-xl font-semibold">
-              {prospect.name} <span className="font-normal text-slate-500">· {prospect.company}</span>
-            </h1>
-            <p className="text-sm text-slate-500">{scenario.label}</p>
+      {/* The "phone": who you're talking to, what's happening, and the controls */}
+      <div className="rounded-2xl bg-slate-900 p-5 text-white shadow-lg sm:p-6">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-300">{scenario.label}</span>
+          <span className="text-right">
+            <span className={`font-mono text-xl ${overTime ? "text-red-400" : remaining <= 60_000 ? "text-amber-300" : "text-white"}`}>{fmt(elapsed)}</span>
+            <span className="ml-1 text-xs text-slate-400">/ {fmt(scenario.limitMs)}</span>
+            {!overTime && remaining <= 60_000 && <span className="ml-2 text-xs text-amber-300">1 min left</span>}
+            {overTime && <span className="ml-2 text-xs text-red-400">over time</span>}
+          </span>
+        </div>
+
+        <div className="mt-4 flex flex-col items-center text-center">
+          <Avatar src={portrait} name={prospect.name} speaking={speaking} size={128} />
+          <p className="mt-3 text-xl font-semibold">{prospect.name}</p>
+          <p className="text-sm text-slate-300">
+            {prospect.title} · {prospect.company}
+          </p>
+          <span className={`mt-3 rounded-full px-3 py-1 text-sm font-medium ${status.cls}`} aria-live="polite">
+            {status.text}
+          </span>
+        </div>
+
+        {mode === "voice" && (
+          <div className="mx-auto mt-4 flex max-w-xs items-center gap-2 text-xs text-slate-400">
+            <span>Your mic</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-700" aria-hidden="true">
+              <div
+                className={`h-1.5 rounded-full transition-[width] duration-100 ${micLevel > 0.25 ? "bg-emerald-400" : "bg-slate-500"}`}
+                style={{ width: `${micLevel * 100}%` }}
+              />
+            </div>
           </div>
-        </div>
-        <div className="text-right">
-          <p className={`font-mono text-2xl ${overTime ? "text-red-600" : "text-slate-900"}`}>{fmt(elapsed)}</p>
-          <p className="text-xs text-slate-500">of {fmt(scenario.limitMs)}</p>
-        </div>
-      </div>
+        )}
 
-      <p className="mt-2 text-sm font-medium text-indigo-700" aria-live="polite">
-        {status}
-      </p>
-      {scenario.notes && (
-        <details className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
-          <summary className="cursor-pointer font-medium text-slate-700">Your notes from the earlier call</summary>
-          <Notes notes={scenario.notes} compact />
-        </details>
-      )}
-
-      <div className="mt-3 h-[26rem] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        {lines.length === 0 && <p className="text-slate-400">Waiting for {prospect.name} to pick up…</p>}
-        <ul className="space-y-3">
-          {lines.map((l) => (
-            <li key={l.key} className={l.speaker === "rep" ? "text-right" : "text-left"}>
-              <span
-                className={[
-                  "inline-block max-w-[85%] rounded-2xl px-4 py-2 text-left text-sm",
-                  l.speaker === "rep" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-900",
-                ].join(" ")}
-              >
-                {l.text}
-              </span>
-            </li>
-          ))}
-          {interim && (
-            <li className="text-right">
-              <span className="inline-block max-w-[85%] rounded-2xl bg-indigo-100 px-4 py-2 text-left text-sm italic text-indigo-900">
-                {interim}
-              </span>
-            </li>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <button onClick={() => setShowBrief((v) => !v)} className="rounded-full bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" aria-pressed={showBrief}>
+            {showBrief ? "Hide brief" : "Brief & notes"}
+          </button>
+          <button onClick={toggleTranscript} className="rounded-full bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700" aria-pressed={showTranscript}>
+            {showTranscript ? "Hide transcript" : "Show transcript"}
+          </button>
+          {mode === "voice" && (
+            <button onClick={() => void switchToTyping()} className="rounded-full bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
+              Switch to typing
+            </button>
           )}
-        </ul>
-        <div ref={bottomRef} />
+          <button
+            onClick={() => void endCall("rep")}
+            className="ml-1 inline-flex items-center gap-2 rounded-full bg-red-600 px-5 py-2 text-sm font-semibold hover:bg-red-500"
+            aria-label="Hang up"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4 rotate-[135deg] fill-current" aria-hidden="true">
+              <path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z" />
+            </svg>
+            Hang up
+          </button>
+        </div>
       </div>
+
+      {showBrief && (
+        <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4 text-sm shadow-sm">
+          <p className="text-slate-700">{scenario.brief}</p>
+          <p className="mt-2 rounded-md bg-indigo-50 px-3 py-2 text-indigo-900">
+            <strong>To pass:</strong> {scenario.success}
+          </p>
+          {scenario.notes && <Notes notes={scenario.notes} />}
+        </div>
+      )}
 
       {notice && (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -829,12 +878,39 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
               Try again
             </button>
           )}
-          {mode === "voice" && (
-            <button onClick={() => void switchToTyping()} className="rounded border border-amber-400 px-2 py-0.5 font-medium hover:bg-amber-100">
-              Switch to typing
-            </button>
-          )}
         </div>
+      )}
+
+      {showTranscript ? (
+        <div className="mt-3 h-[22rem] overflow-y-auto rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          {lines.length === 0 && <p className="text-slate-400">Waiting for {prospect.name} to pick up…</p>}
+          <ul className="space-y-3">
+            {lines.map((l) => (
+              <li key={l.key} className={l.speaker === "rep" ? "text-right" : "text-left"}>
+                <span
+                  className={[
+                    "inline-block max-w-[85%] rounded-2xl px-4 py-2 text-left text-sm",
+                    l.speaker === "rep" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-900",
+                  ].join(" ")}
+                >
+                  {l.text}
+                </span>
+              </li>
+            ))}
+            {interim && (
+              <li className="text-right">
+                <span className="inline-block max-w-[85%] rounded-2xl bg-indigo-100 px-4 py-2 text-left text-sm italic text-indigo-900">
+                  {interim}
+                </span>
+              </li>
+            )}
+          </ul>
+          <div ref={bottomRef} />
+        </div>
+      ) : (
+        <p className="mt-3 text-center text-sm text-slate-500">
+          Transcript hidden, like a real call. The full transcript is in your report afterwards.
+        </p>
       )}
 
       {mode === "typed" && (
@@ -851,15 +927,6 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
           </button>
         </form>
       )}
-
-      <div className="mt-4 flex justify-end">
-        <button
-          onClick={() => void endCall("rep")}
-          className="rounded-lg bg-red-600 px-6 py-3 font-medium text-white hover:bg-red-700"
-        >
-          Hang up
-        </button>
-      </div>
     </div>
   );
 }
