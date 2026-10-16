@@ -252,6 +252,7 @@ const silence = z.object({
 });
 
 const team = z.object({
+  admins: z.array(z.string()),
   managers: z.array(z.string()),
   inactive_after_days: z.number().min(1),
 });

@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import type { SessionRow } from "@/lib/types";
 import { TABLES } from "@/lib/db/tables";
 import { isAllowedEmail, isAllowedUser } from "@/lib/authDomain";
+import { isLockedOut } from "@/lib/accessFlags";
 
 export { isAllowedEmail };
 
@@ -42,6 +43,7 @@ export async function requireUser(): Promise<{ user: AuthedUser } | { error: Nex
   } = await supabase.auth.getUser();
   if (!user) return { error: NextResponse.json({ error: "Not signed in" }, { status: 401 }) };
   if (!isAllowedUser(user)) return { error: NextResponse.json({ error: "Account not allowed" }, { status: 403 }) };
+  if (await isLockedOut(user)) return { error: NextResponse.json({ error: "Your access to the sales trainer has been turned off." }, { status: 403 }) };
   lastFullCheck.set(user.id, Date.now());
   return { user };
 }

@@ -3,7 +3,7 @@ import { config } from "@/lib/config";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { TABLES } from "@/lib/db/tables";
 import type { CallMetrics, CriterionResult, TalkStats } from "@/lib/types";
-import { isManager } from "./access";
+import { isAdminEmail, isConfiguredManager } from "./access";
 
 // Numbers for the manager's Team pages. Read with the service role (the pages check the viewer is a manager first), and
 // only the parts of each report that are needed: totals, the per-skill grades and the speaking metrics, not transcripts.
@@ -13,6 +13,9 @@ export interface Person {
   email: string;
   name: string;
   isManager: boolean;
+  isAdmin: boolean;
+  /** Access turned off on the Admin page. */
+  disabled: boolean;
   joinedAt: string;
 }
 
@@ -73,15 +76,22 @@ export function scenarioLabel(key: string): string {
 }
 
 export async function loadPeople(): Promise<Person[]> {
-  const { data, error } = await supabaseAdmin().from(TABLES.profiles).select("id, email, name, created_at");
+  // select("*") so this works before the "disabled" column exists (supabase/migrations/0002_trainer_access.sql).
+  const { data, error } = await supabaseAdmin().from(TABLES.profiles).select("*");
   if (error) console.error("team: could not read profiles", error);
-  return ((data ?? []) as { id: string; email: string; name: string | null; created_at: string }[]).map((p) => ({
-    id: p.id,
-    email: p.email,
-    name: displayName(p.email, p.name),
-    isManager: isManager(p.email),
-    joinedAt: p.created_at,
-  }));
+  type Row = { id: string; email: string; name: string | null; role?: string | null; disabled?: boolean | null; created_at: string };
+  return ((data ?? []) as Row[]).map((p) => {
+    const isAdmin = isAdminEmail(p.email);
+    return {
+      id: p.id,
+      email: p.email,
+      name: displayName(p.email, p.name),
+      isAdmin,
+      isManager: isAdmin || isConfiguredManager(p.email) || p.role === "manager",
+      disabled: !isAdmin && Boolean(p.disabled),
+      joinedAt: p.created_at,
+    };
+  });
 }
 
 /** Finished calls (newest first), optionally for one person and/or since a date. */

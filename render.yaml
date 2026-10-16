@@ -42,3 +42,5 @@ services:
         sync: false
       - key: MANAGER_EMAILS              # optional; overrides config/team.json (comma-separated)
         sync: false
+      - key: ADMIN_EMAILS                # optional; overrides config/team.json (comma-separated)
+        sync: false
