@@ -17,9 +17,11 @@ const Body = z.object({
   difficulty: z.enum(DIFFICULTIES),
 });
 
-// Personality and difficulty can also be "random": like a real call to someone you don't know, the rep doesn't choose.
+// Company size, department, personality and difficulty can also be "random": like a real call to someone you don't know, the rep doesn't choose.
 // The dice are rolled here on the server; the session stores the real values, so the prospect and the scoring work as usual.
 const RandomBody = Body.extend({
+  company_size: z.enum([...SIZES, "random"]),
+  department: z.enum([...DEPARTMENTS, "random"]),
   personality: z.enum([...PERSONALITIES, "random"]),
   difficulty: z.enum([...DIFFICULTIES, "random"]),
 });
@@ -67,6 +69,8 @@ export async function POST(req: Request) {
     if (!parsed.success) return NextResponse.json({ error: "Invalid settings" }, { status: 400 });
     b = {
       ...parsed.data,
+      company_size: parsed.data.company_size === "random" ? pickOne(SIZES) : parsed.data.company_size,
+      department: parsed.data.department === "random" ? pickOne(DEPARTMENTS) : parsed.data.department,
       personality: parsed.data.personality === "random" ? pickOne(PERSONALITIES) : parsed.data.personality,
       difficulty: parsed.data.difficulty === "random" ? pickOne(DIFFICULTIES) : parsed.data.difficulty,
     };

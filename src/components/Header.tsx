@@ -18,6 +18,9 @@ export async function Header() {
         </Link>
         {user && (
           <nav className="flex items-center gap-5 text-sm">
+            <Link href="/" className="text-slate-700 hover:text-indigo-600">
+              Home
+            </Link>
             <Link href="/setup" className="text-slate-700 hover:text-indigo-600">
               New call
             </Link>
