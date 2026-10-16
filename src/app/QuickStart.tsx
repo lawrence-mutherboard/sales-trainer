@@ -8,20 +8,26 @@ interface Option {
   label: string;
 }
 
-// One click to a realistic practice call: the scenario you pick, with a random company, department, personality and
-// difficulty (rolled when the call is created), like a real call to someone you don't know.
+// One click to a practice call: the scenario you pick, with a random company and department. Personality and difficulty
+// default to Random (rolled when the call is created, like a real call to someone you don't know), but can be chosen here.
 export function QuickStart({
   scenarios,
   sizes,
   departments,
+  personalities,
+  difficulties,
 }: {
   scenarios: (Option & { minutes: number; brief: string })[];
   sizes: Option[];
   departments: Option[];
+  personalities: Option[];
+  difficulties: Option[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [personality, setPersonality] = useState("random");
+  const [difficulty, setDifficulty] = useState("random");
   const pick = <T,>(xs: T[]) => xs[Math.floor(Math.random() * xs.length)];
 
   async function start(scenario: string) {
@@ -31,13 +37,7 @@ export function QuickStart({
       const res = await fetch("/api/session/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          scenario,
-          company_size: pick(sizes).value,
-          department: pick(departments).value,
-          personality: "random",
-          difficulty: "random",
-        }),
+        body: JSON.stringify({ scenario, company_size: pick(sizes).value, department: pick(departments).value, personality, difficulty }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Couldn't start the call");
@@ -48,8 +48,38 @@ export function QuickStart({
     }
   }
 
+  const Choice = ({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: Option[] }) => (
+    <fieldset>
+      <legend className="mb-1.5 text-sm font-medium text-slate-700">{label}</legend>
+      <div className="flex flex-wrap gap-1.5">
+        {[{ value: "random", label: "🎲 Random" }, ...options].map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            aria-pressed={value === o.value}
+            className={[
+              "rounded-full border px-3 py-1 text-sm transition",
+              value === o.value
+                ? "border-indigo-600 bg-indigo-600 text-white"
+                : o.value === "random"
+                  ? "border-dashed border-indigo-400 bg-indigo-50 text-indigo-900 hover:bg-indigo-100"
+                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400",
+            ].join(" ")}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </fieldset>
+  );
+
   return (
     <div>
+      <div className="mb-4 grid gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2">
+        <Choice label="Prospect's personality" value={personality} onChange={setPersonality} options={personalities} />
+        <Choice label="Difficulty" value={difficulty} onChange={setDifficulty} options={difficulties} />
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {scenarios.map((s, i) => (
           <button

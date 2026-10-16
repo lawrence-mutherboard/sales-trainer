@@ -38,7 +38,7 @@ export default async function Home() {
     <div>
       <h1 className="text-2xl font-semibold">{name ? `Hi ${name}, ready to practise?` : "Ready to practise?"}</h1>
       <p className="mt-1 text-slate-600">
-        Pick a call. You&apos;ll get a random prospect, like a real call to someone you don&apos;t know. Use headphones for the best experience.
+        Pick a call type to start. Personality and difficulty are random unless you choose them, like a real call to someone you don&apos;t know. Use headphones for the best experience.
       </p>
 
       <div className="mt-5">
@@ -46,10 +46,12 @@ export default async function Home() {
           scenarios={options.scenarios.map((s) => ({ value: s.value, label: s.label, minutes: s.minutes, brief: s.brief }))}
           sizes={options.sizes}
           departments={options.departments}
+          personalities={options.personalities}
+          difficulties={options.difficulties}
         />
         <p className="mt-3 text-sm">
           <Link href="/setup" className="text-indigo-600 hover:underline">
-            Or choose the company, department, personality and difficulty yourself →
+            Or choose the company size and department too →
           </Link>
         </p>
       </div>
