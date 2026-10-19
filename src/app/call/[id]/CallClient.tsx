@@ -7,7 +7,7 @@ import { MicCheck } from "./MicCheck";
 import { applyCorrections, type Correction } from "@/lib/voice/corrections";
 import type { TurnTimingConfig } from "@/lib/voice/turnTiming";
 import { pickAccent } from "@/lib/voice/accent";
-import { playRingback, type Ringback } from "@/lib/voice/ring";
+import { playHangup, playRingback, type Ringback } from "@/lib/voice/ring";
 import { startAmbience, type Ambience } from "@/lib/voice/ambience";
 import { browserVoiceSupported, createVoiceAdapter, type VoiceAdapter, type VoiceMode } from "@/lib/voice";
 
@@ -40,6 +40,7 @@ export interface RingConfig {
   maxRings: number;
   volume: number;
   ukPercent: number;
+  hangup: { enabled: boolean; volume: number };
   ambience: { enabled: boolean; volume: number; onlyWithHeadphones: boolean };
 }
 
@@ -54,7 +55,8 @@ export interface SilenceConfig {
 
 type Phase = "precall" | "connecting" | "live" | "ending" | "scoring";
 type Line = { key: number; speaker: "rep" | "prospect"; text: string };
-type ReplyPayload = { repText?: string; startedMs?: number; endedMs?: number };
+/** lineIds: the on-screen lines whose words this request saves (so their accurate text is sent only once they are saved). */
+type ReplyPayload = { repText?: string; startedMs?: number; endedMs?: number; lineIds?: number[] };
 type StreamEvent =
   | { t: "delta"; text: string }
   | { t: "mood"; mood: string | null }
@@ -142,7 +144,24 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   const lineKey = useRef(0);
   const busyRef = useRef(false);
   const endedRef = useRef(false);
-  const pendingRef = useRef<{ text: string; startedMs: number; endedMs: number } | null>(null);
+  const pendingRef = useRef<{ text: string; startedMs: number; endedMs: number; lineIds: number[] } | null>(null);
+  /** One promise per rep line, resolved once the server has saved that line (see requestReply). */
+  const savedLines = useRef(new Map<number, { promise: Promise<void>; resolve: () => void; done: boolean }>());
+  const lineSaved = useCallback((lineId: number) => {
+    let entry = savedLines.current.get(lineId);
+    if (!entry) {
+      let resolve: () => void = () => {};
+      const promise = new Promise<void>((r) => (resolve = r));
+      entry = { promise, resolve: () => undefined, done: false };
+      const e = entry;
+      e.resolve = () => {
+        e.done = true;
+        resolve();
+      };
+      savedLines.current.set(lineId, entry);
+    }
+    return entry;
+  }, []);
   const timingsRef = useRef<{ idx: number; startedMs: number; endedMs: number }[]>([]);
   const lastPayloadRef = useRef<ReplyPayload | null>(null);
   const serverHasRepRef = useRef(false);
@@ -194,6 +213,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
     async (endedBy: "rep" | "prospect" | "timeout") => {
       if (endedRef.current) return;
       endedRef.current = true;
+      if (ring.hangup.enabled) playHangup(ring.hangup.volume);
       setPhase("ending");
       latest.current.cancelSilence();
       const durationMs = now();
@@ -225,7 +245,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       }
       router.push(`/report/${sessionId}`);
     },
-    [now, router, sessionId],
+    [now, router, sessionId, ring.hangup.enabled, ring.hangup.volume],
   );
 
   // ---------------- Asking the AI prospect for a reply ----------------
@@ -243,7 +263,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       if (!isRetry) lastPayloadRef.current = payload;
 
       // After a server-side failure the rep's turn is already saved, so a retry sends no text.
-      const body = isRetry && serverHasRepRef.current ? { nowMs: now(), inputMode: modeRef.current } : { ...payload, nowMs: now(), inputMode: modeRef.current };
+      const body = isRetry && serverHasRepRef.current ? { nowMs: now(), inputMode: modeRef.current } : { repText: payload.repText, startedMs: payload.startedMs, endedMs: payload.endedMs, nowMs: now(), inputMode: modeRef.current };
 
       const lineId = ++lineKey.current;
       const tReq = now(); // when the app sent the rep's words to Claude
@@ -359,6 +379,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
             } else if (ev.t === "done") {
               endCallRequested = ev.endCall;
               doneIdx = ev.idx;
+              for (const id of payload.lineIds ?? []) lineSaved(id).resolve(); // the rep's words are saved now
             } else if (ev.t === "error") {
               failed = ev.message;
               if (ev.repSaved === false) serverHasRepRef.current = false;
@@ -417,12 +438,12 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
       const queued = pendingRef.current;
       if (queued && !endedRef.current) {
         pendingRef.current = null;
-        void requestReply({ repText: queued.text, startedMs: queued.startedMs, endedMs: queued.endedMs });
+        void requestReply({ repText: queued.text, startedMs: queued.startedMs, endedMs: queued.endedMs, lineIds: queued.lineIds });
       } else if (!endedRef.current) {
         latest.current.armSilence(); // the prospect has finished talking: start waiting for the rep
       }
     },
-    [endCall, now, sessionId, fillers, speakMode],
+    [endCall, now, sessionId, fillers, speakMode, lineSaved],
   );
 
   // ---------------- If the rep goes quiet: "Hello?", "Hello?", then hang up ----------------
@@ -493,7 +514,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
     const queued = pendingRef.current;
     if (queued) {
       pendingRef.current = null;
-      void requestReply({ repText: queued.text, startedMs: queued.startedMs, endedMs: queued.endedMs });
+      void requestReply({ repText: queued.text, startedMs: queued.startedMs, endedMs: queued.endedMs, lineIds: queued.lineIds });
       return;
     }
     if (stage >= 3) {
@@ -553,6 +574,11 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
                 const fixed = b ? applyCorrections(b, corrections) : null;
                 if (!fixed || fixed === original) return;
                 setLines((l) => l.map((x) => (x.key === lineId ? { ...x, text: fixed } : x)));
+                // Words said while the prospect was talking are only saved once the prospect has finished, so wait for
+                // this line to be saved before replacing it (otherwise the server can't find it yet).
+                const saved = lineSaved(lineId);
+                await Promise.race([saved.promise, new Promise((r) => setTimeout(r, 60_000))]);
+                if (!saved.done) return; // the call ended before this line was sent
                 for (let attempt = 0; attempt < 2; attempt++) {
                   const res = await fetch(`/api/session/${sessionId}/refine`, {
                     method: "POST",
@@ -560,7 +586,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
                     body: JSON.stringify({ original, better: fixed }),
                   }).catch(() => null);
                   if (res?.ok || res?.status !== 404) return;
-                  await new Promise((r) => setTimeout(r, 2000)); // the turn may not have been saved yet
+                  await new Promise((r) => setTimeout(r, 1500));
                 }
               })
               .catch(() => undefined)
@@ -570,11 +596,11 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
           if (busyRef.current) {
             const p = pendingRef.current;
             pendingRef.current = p
-              ? { text: `${p.text} ${u.text}`, startedMs: p.startedMs, endedMs: u.endedMs }
-              : { text: u.text, startedMs: u.startedMs, endedMs: u.endedMs };
+              ? { text: `${p.text} ${u.text}`, startedMs: p.startedMs, endedMs: u.endedMs, lineIds: [...p.lineIds, lineId] }
+              : { text: u.text, startedMs: u.startedMs, endedMs: u.endedMs, lineIds: [lineId] };
             return;
           }
-          void requestReply({ repText: u.text, startedMs: u.startedMs, endedMs: u.endedMs });
+          void requestReply({ repText: u.text, startedMs: u.startedMs, endedMs: u.endedMs, lineIds: [lineId] });
         }),
       );
 
@@ -589,7 +615,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
           `The person being called is ${prospect.name} at ${prospect.company}.${lastProspectRef.current ? ` They just said: "${lastProspectRef.current.slice(-250)}"` : ""}`,
       });
     },
-    [now, prospect.name, prospect.company, personality, requestReply, corrections, turnTiming, sttWaitMs],
+    [now, prospect.name, prospect.company, personality, requestReply, corrections, turnTiming, sttWaitMs, lineSaved],
   );
 
   const beginCall = useCallback(

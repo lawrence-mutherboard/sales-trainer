@@ -1,10 +1,14 @@
 {
-  "_help": "What happens when the rep presses Start call. ring: the phone rings before the prospect answers, like a real cold call (rings is picked between min_rings and max_rings; volume 0 to 1; the ring style follows the prospect's accent). ambience: a faint office background hum during the call; only_with_headphones keeps it off when the rep uses speakers, so the microphone does not hear it. pickup_styles: how the prospect answers a COLD CALL; one is chosen at random per call, and each note replaces the default opening for that call. Add or edit styles freely (id is just a label). situations: what the prospect is in the middle of when the call happens, one picked at random per call (cold_call for cold calls, follow_up for the scheduled scenarios); it shapes their patience and mood. real_concerns: in objection-handling calls, the honest reason behind the objections, which the prospect only admits if the rep asks good open questions. diary: the prospect has a realistic diary for the next two weeks and only agrees to times that fit it.",
+  "_help": "What happens when the rep presses Start call. ring: the phone rings before the prospect answers, like a real cold call (rings is picked between min_rings and max_rings; volume 0 to 1; the ring style follows the prospect's accent). ambience: a faint office background hum during the call; only_with_headphones keeps it off when the rep uses speakers, so the microphone does not hear it. pickup_styles: how the prospect answers a COLD CALL; one is chosen at random per call, and each note replaces the default opening for that call. Add or edit styles freely (id is just a label). situations: what the prospect is in the middle of when the call happens, one picked at random per call (cold_call for cold calls, follow_up for the scheduled scenarios); it shapes their patience and mood. real_concerns: in objection-handling calls, the honest reason behind the objections, which the prospect only admits if the rep asks good open questions. diary: the prospect has a realistic diary for the next two weeks and only agrees to times that fit it. hangup_sound: the short 'call ended' tone played when a call ends (volume 0 to 1).",
   "ring": {
     "enabled": true,
     "min_rings": 2,
     "max_rings": 3,
     "volume": 0.18
+  },
+  "hangup_sound": {
+    "enabled": true,
+    "volume": 0.15
   },
   "ambience": {
     "enabled": true,
