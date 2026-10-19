@@ -8,6 +8,7 @@ const cases: [string, boolean][] = [
   ["Sorry about that. I'm calling because teams like yours lose hours each week chasing status updates.", false],
   ["You're in the middle of something?", false],
   ["Hello?", false],
+  ["I'm in the middle of something here, so if you've got a reason for calling, I'd need to hear it quickly.", true],
   ["Understood, I'll be quick. We help operations teams get their projects out of spreadsheets, is that relevant?", false],
 ];
 let failed = 0;

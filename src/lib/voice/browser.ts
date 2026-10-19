@@ -76,6 +76,14 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
   /** Headphones mode: the mic stays open while the prospect talks (so your first words are not lost); what it hears then is ignored. */
   private headphones = false;
   private ignoreResults = false;
+  /**
+   * Headphones mode: Chrome keeps listening while the prospect talks and can pick up their voice leaking from the
+   * headphones. It sometimes finalises that text a moment AFTER the prospect stops, when we are listening again, which
+   * made the prospect's own line look like the rep's. So when the prospect stops, every result Chrome had already
+   * started (up to this index in its result list) is thrown away. -1 = none. Reset when recognition restarts.
+   */
+  private seenResults = 0;
+  private discardThrough = -1;
 
   private buffer = "";
   /** The phrases Chrome has settled on in the current turn (it splits a turn where the rep pauses). */
@@ -178,6 +186,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     };
 
     rec.onresult = (e) => {
+      this.seenResults = e.results.length;
       if (this.ignoreResults) return; // headphones mode: not the rep, so drop it
       const at = this.now();
       this.lastResultAt = at;
@@ -186,6 +195,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
       let interim = "";
       let gotFinal = false;
       for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (i <= this.discardThrough) continue; // began while the prospect was talking: their voice, not the rep's
         const r = e.results[i];
         if (r.isFinal) {
           const t = r[0].transcript.trim();
@@ -230,6 +240,8 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
 
     // Chrome ends recognition on its own from time to time; keep it going while the call is live.
     rec.onend = () => {
+      this.seenResults = 0; // a restarted recognition starts a new result list
+      this.discardThrough = -1;
       if (this.active && !this.micPaused) setTimeout(() => this.startRecognition(), 50);
     };
 
@@ -407,6 +419,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
         }
       }
     } else {
+      if (this.ignoreResults) this.discardThrough = this.seenResults - 1; // results begun during the prospect's turn
       this.ignoreResults = false;
       this.micPaused = false;
       this.startRecognition();

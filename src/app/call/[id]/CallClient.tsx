@@ -135,6 +135,9 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   const nudgeSpeakingRef = useRef(false);
   /** The prospect's last few lines, to catch "rep" transcripts that are really the prospect's words. */
   const recentProspectRef = useRef<string[]>([]);
+  /** The reply the prospect is giving right now (it is spoken while it is still arriving). */
+  const liveProspectRef = useRef("");
+  const prospectWords = () => [liveProspectRef.current, ...recentProspectRef.current].filter(Boolean);
   const rememberProspect = (text: string) => {
     recentProspectRef.current = [text, ...recentProspectRef.current].slice(0, 3);
   };
@@ -370,6 +373,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
               mood = ev.mood;
             } else if (ev.t === "delta") {
               replyText += ev.text;
+              liveProspectRef.current = replyText;
               if (!started) {
                 started = true;
                 tDelta = now();
@@ -402,6 +406,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
 
         handleText("", true);
         if (replyText.trim()) rememberProspect(replyText.trim());
+        liveProspectRef.current = "";
         serverHasRepRef.current = false;
 
         // Wait for the prospect to finish talking, then record how long they spoke (for the talk ratio).
@@ -567,7 +572,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
           if (endedRef.current || ringingRef.current) return;
           // Fix words the recogniser often mishears ("bed time" -> "bad time", "motherboard" -> "mutherboard").
           const u = { ...raw, text: applyCorrections(raw.text, corrections) };
-          if (echoesProspect(u.text, recentProspectRef.current)) {
+          if (echoesProspect(u.text, prospectWords())) {
             console.warn("Ignored speech that repeats the prospect's own words (probably heard from the speakers)", u.text);
             setInterim("");
             return;
@@ -622,7 +627,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         accurateWaitMs: sttWaitMs,
         // Only who is being called: quoting the prospect's last line here made the transcriber sometimes copy it back.
         getContext: () => `The person being called is ${prospect.name} at ${prospect.company}.`,
-        isEcho: (text) => echoesProspect(text, recentProspectRef.current),
+        isEcho: (text) => echoesProspect(text, prospectWords()),
       });
     },
     [now, prospect.name, prospect.company, personality, requestReply, corrections, turnTiming, sttWaitMs, lineSaved],

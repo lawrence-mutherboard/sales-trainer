@@ -16,7 +16,9 @@ function words(text: string): string[] {
 export function echoesProspect(heard: string, prospectLines: string[], threshold = 0.75): boolean {
   const h = words(heard);
   if (h.length < 5) return false;
-  for (const line of prospectLines) {
+  // Compare with each whole line and with each of its sentences (an echo can be just part of a reply).
+  const candidates = prospectLines.flatMap((line) => [line, ...line.split(/(?<=[.!?])\s+/)]);
+  for (const line of candidates) {
     const p = words(line);
     if (p.length < 5) continue;
     const inLine = new Set(p);
