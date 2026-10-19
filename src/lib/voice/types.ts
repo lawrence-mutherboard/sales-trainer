@@ -34,6 +34,8 @@ export interface VoiceStartOptions {
   accurateWaitMs?: number;
   /** Short text about the call so far (who is being called, what they just said), sent to the transcriber to help with names. */
   getContext?: () => string;
+  /** True if this text is really the prospect's own words (echo, or copied by the transcriber); it is then not used. */
+  isEcho?: (text: string) => boolean;
 }
 
 export interface VoiceAdapter {
