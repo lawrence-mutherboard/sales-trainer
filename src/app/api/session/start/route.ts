@@ -4,6 +4,7 @@ import { DEPARTMENTS, DIFFICULTIES, PERSONALITIES, SIZES, config } from "@/lib/c
 import { ensureProfile, requireUser } from "@/lib/api/auth";
 import { generateProspect } from "@/lib/profile/generate";
 import { warmElevenLabs } from "@/lib/ai/elevenlabs";
+import { cleanUpOldCallsSoon } from "@/lib/retention";
 import { isUuid } from "@/lib/api/auth";
 import type { SessionRow, SessionSecrets } from "@/lib/types";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
 
   await ensureProfile(auth.user);
   warmElevenLabs(); // load the voice list now, not on the first spoken line
+  cleanUpOldCallsSoon(); // delete calls past the retention period (at most every six hours)
 
   const raw = await req.json().catch(() => null);
   const repeat = Repeat.safeParse(raw);
