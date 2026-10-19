@@ -101,6 +101,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
   private inflight = 0;
   private accurateWaitMs = 0;
   private getContext: (() => string) | null = null;
+  private isEcho: ((text: string) => boolean) | null = null;
   /** Finished turns that are waiting briefly for their accurate text before being handed on. */
   private pendingEmits = 0;
   private emitChain: Promise<void> = Promise.resolve();
@@ -143,6 +144,7 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
     this.timing = opts.turnTiming ?? DEFAULT_TURN_TIMING;
     this.accurateWaitMs = opts.accurateWaitMs ?? 0;
     this.getContext = opts.getContext ?? null;
+    this.isEcho = opts.isEcho ?? null;
 
     // Ask for the mic up front so a blocked mic gives a clear message before the call starts.
     try {
@@ -354,6 +356,10 @@ export class BrowserVoiceAdapter implements VoiceAdapter {
         if (parts.length === 0 || parts.some((p) => p === null)) return null; // one failed: keep the browser's text
         const joined = parts.filter(Boolean).join(" ").trim();
         if (!joined) return null;
+        if (this.isEcho?.(joined)) {
+          console.warn("Ignoring a transcription that repeats the prospect's own words", { better: joined, browser: text });
+          return null;
+        }
         if (plausibleTranscript(joined, text)) return joined;
         console.warn("Ignoring an implausible transcription", { better: joined, browser: text });
         return null;

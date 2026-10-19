@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { MicCheck } from "./MicCheck";
 import { applyCorrections, type Correction } from "@/lib/voice/corrections";
+import { echoesProspect } from "@/lib/voice/echo";
 import type { TurnTimingConfig } from "@/lib/voice/turnTiming";
 import { pickAccent } from "@/lib/voice/accent";
 import { playHangup, playRingback, type Ringback } from "@/lib/voice/ring";
@@ -132,8 +133,11 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
   const gateRef = useRef<Promise<void>>(Promise.resolve());
   /** True while one of the prospect's "are you still there?" lines is being spoken. */
   const nudgeSpeakingRef = useRef(false);
-  /** What the prospect said last, given to the transcriber as context. */
-  const lastProspectRef = useRef("");
+  /** The prospect's last few lines, to catch "rep" transcripts that are really the prospect's words. */
+  const recentProspectRef = useRef<string[]>([]);
+  const rememberProspect = (text: string) => {
+    recentProspectRef.current = [text, ...recentProspectRef.current].slice(0, 3);
+  };
   /** Accurate transcripts still on their way; the call end waits briefly for them so the report uses them. */
   const refinePending = useRef<Set<Promise<void>>>(new Set());
 
@@ -397,7 +401,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         }
 
         handleText("", true);
-        if (replyText.trim()) lastProspectRef.current = replyText.trim();
+        if (replyText.trim()) rememberProspect(replyText.trim());
         serverHasRepRef.current = false;
 
         // Wait for the prospect to finish talking, then record how long they spoke (for the talk ratio).
@@ -498,7 +502,7 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         if (!res.ok) throw new Error(`nudge ${res.status}`);
         const { idx } = (await res.json()) as { idx: number };
         setLines((l) => [...l, { key: ++lineKey.current, speaker: "prospect", text }]);
-        lastProspectRef.current = text;
+        rememberProspect(text);
         timingsRef.current.push({ idx, startedMs: span.startedMs, endedMs: span.endedMs });
       }
     } catch (err) {
@@ -563,6 +567,11 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
           if (endedRef.current || ringingRef.current) return;
           // Fix words the recogniser often mishears ("bed time" -> "bad time", "motherboard" -> "mutherboard").
           const u = { ...raw, text: applyCorrections(raw.text, corrections) };
+          if (echoesProspect(u.text, recentProspectRef.current)) {
+            console.warn("Ignored speech that repeats the prospect's own words (probably heard from the speakers)", u.text);
+            setInterim("");
+            return;
+          }
           setInterim("");
           const lineId = ++lineKey.current;
           setLines((l) => [...l, { key: lineId, speaker: "rep", text: u.text }]);
@@ -611,8 +620,9 @@ export function CallClient({ sessionId, interrupted, prospect, scenario, persona
         headphones: headphonesRef.current,
         turnTiming,
         accurateWaitMs: sttWaitMs,
-        getContext: () =>
-          `The person being called is ${prospect.name} at ${prospect.company}.${lastProspectRef.current ? ` They just said: "${lastProspectRef.current.slice(-250)}"` : ""}`,
+        // Only who is being called: quoting the prospect's last line here made the transcriber sometimes copy it back.
+        getContext: () => `The person being called is ${prospect.name} at ${prospect.company}.`,
+        isEcho: (text) => echoesProspect(text, recentProspectRef.current),
       });
     },
     [now, prospect.name, prospect.company, personality, requestReply, corrections, turnTiming, sttWaitMs, lineSaved],
