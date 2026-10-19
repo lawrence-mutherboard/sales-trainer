@@ -60,3 +60,37 @@ export function playRingback(accent: Accent, rings: number, volume: number): Rin
   });
   return { done, stop: finish };
 }
+
+/**
+ * The short tone you hear when a call ends: a soft click, then two quick descending beeps. Made with the Web Audio API,
+ * like the ringing, so there is no file to download.
+ */
+export function playHangup(volume: number): void {
+  const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioCtx || volume <= 0) return;
+  try {
+    const ctx = new AudioCtx();
+    void ctx.resume();
+    const t0 = ctx.currentTime + 0.02;
+    const beep = (freq: number, at: number, len: number, level: number) => {
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, at);
+      gain.gain.linearRampToValueAtTime(level, at + 0.01);
+      gain.gain.setValueAtTime(level, at + len - 0.02);
+      gain.gain.linearRampToValueAtTime(0, at + len);
+      gain.connect(ctx.destination);
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      osc.start(at);
+      osc.stop(at + len + 0.02);
+    };
+    beep(1200, t0, 0.03, volume * 0.6); // the "click" of the line closing
+    beep(620, t0 + 0.12, 0.14, volume);
+    beep(460, t0 + 0.32, 0.18, volume);
+    setTimeout(() => void ctx.close().catch(() => undefined), 900);
+  } catch {
+    /* sound is a nice-to-have; never let it break ending the call */
+  }
+}
