@@ -52,6 +52,8 @@ const business = z.object({
     seat_bucket_note: z.string(),
   }),
   discount_rule: z.object({ max_percent: z.number(), alternative: z.string() }),
+  // Calls (transcripts and scores) older than this are deleted automatically (src/lib/retention.ts).
+  retention_days: z.number().int().min(1),
 });
 
 const ai = z.object({
