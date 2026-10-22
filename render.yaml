@@ -6,7 +6,7 @@ services:
     runtime: node
     plan: free            # free instances go to sleep after ~15 minutes idle; the first visit afterwards is slow
     region: frankfurt     # closest to the UK among Render's regions at the time of writing; check the options on Render
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build   # npm ci installs exactly what package-lock.json lists
     startCommand: npm start
     healthCheckPath: /login
     envVars:
