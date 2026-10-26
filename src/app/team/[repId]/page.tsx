@@ -100,10 +100,10 @@ export default async function RepPage({
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">
                   <dt className="text-xs text-slate-500">Talk time</dt>
-                  <dd className={`text-xl font-semibold ${s.talkShare != null && s.talkShare > 60 ? "text-amber-700" : ""}`}>
+                  <dd className={`text-xl font-semibold ${s.talkShare != null && s.talkShare > (s.talkLimit ?? 60) ? "text-amber-700" : ""}`}>
                     {s.talkShare == null ? "—" : `${s.talkShare}%`}
                   </dd>
-                  <dd className="text-[11px] text-slate-400">under about 55–60%</dd>
+                  <dd className="text-[11px] text-slate-400">{s.talkLimit ? `under ${s.talkLimit}% for their calls` : "under about 55% (65% on cold calls)"}</dd>
                 </div>
                 <div className="rounded-lg bg-slate-50 p-3">
                   <dt className="text-xs text-slate-500">Pace</dt>
