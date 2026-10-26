@@ -1,10 +1,13 @@
 {
-  "_help": "Who can do what. owners: the people with the most power. They can make anyone an admin or remove it, and nobody can change or lock them out from the app (change this list in code, or OWNER_EMAILS on Render). admins: always admins (normally empty; owners make admins on the Admin page instead). Admins can make people managers and turn reps' and managers' access off or on, but can't make admins or change other admins. managers: always managers; anyone else can be made a manager on the Admin page. Emails are matched ignoring capitals; OWNER_EMAILS, ADMIN_EMAILS and MANAGER_EMAILS (comma-separated) on Render override these lists. inactive_after_days: when the Team page flags someone as not practising.",
+  "_help": "Who can do what. owners: the people with the most power. They can make anyone an admin or remove it, and nobody can change or lock them out from the app (change this list in code, or OWNER_EMAILS on Render). admins: always admins (normally empty; owners make admins on the Admin page instead). Admins can make people managers and turn reps' and managers' access off or on, but can't make admins or change other admins. managers: always managers; anyone else can be made a manager on the Admin page. Emails are matched ignoring capitals; OWNER_EMAILS, ADMIN_EMAILS and MANAGER_EMAILS (comma-separated) on Render override these lists. inactive_after_days: when the Team page flags someone as not practising. hidden: people left out of the Team and Admin lists and the team totals (they keep their access and can still practise).",
   "owners": [
     "lawrence@mutherboard.com",
     "tania@mutherboard.com"
   ],
   "admins": [],
   "managers": [],
+  "hidden": [
+    "lawrence@mutherboard.com"
+  ],
   "inactive_after_days": 7
 }

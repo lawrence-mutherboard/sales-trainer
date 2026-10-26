@@ -22,7 +22,10 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
   const sortKey = sp.sort && SORTS[sp.sort] ? sp.sort : "calls";
   const daysParam = period.days ? String(period.days) : "all";
 
-  const [people, calls] = await Promise.all([loadPeople(), loadCalls({ since: period.since })]);
+  const [people, allCalls] = await Promise.all([loadPeople(), loadCalls({ since: period.since })]);
+  // Only calls by people on the list (hidden people, config/team.json -> hidden, are left out of the totals too).
+  const listed = new Set(people.map((p) => p.id));
+  const calls = allCalls.filter((c) => listed.has(c.repId));
   const byRep = new Map<string, typeof calls>();
   for (const c of calls) byRep.set(c.repId, [...(byRep.get(c.repId) ?? []), c]);
   const rows = people.map((p) => summarise(p, byRep.get(p.id) ?? [])).sort(SORTS[sortKey].by);

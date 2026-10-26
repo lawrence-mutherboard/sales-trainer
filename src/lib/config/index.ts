@@ -260,6 +260,8 @@ const team = z.object({
   owners: z.array(z.string()).min(1),
   admins: z.array(z.string()),
   managers: z.array(z.string()),
+  // Left out of the Team and Admin lists and the team totals (they keep their access).
+  hidden: z.array(z.string()).default([]),
   inactive_after_days: z.number().min(1),
 });
 
