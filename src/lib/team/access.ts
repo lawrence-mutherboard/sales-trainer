@@ -3,14 +3,17 @@ import { notFound, redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { adminEmails, isAdminEmail, profileFlags } from "@/lib/accessFlags";
+import { isFixedAdminEmail, isOwnerEmail, profileFlags } from "@/lib/accessFlags";
 
-export { adminEmails, isAdminEmail };
+export { isFixedAdminEmail, isOwnerEmail };
 
 // Who can do what.
-//   Admin:   listed in config/team.json -> admins (or ADMIN_EMAILS on the server). Can use the Admin page. Always a manager.
-//   Manager: listed in config/team.json -> managers (or MANAGER_EMAILS), or given the manager role on the Admin page.
-//            Can see the Team pages and anyone's call reports.
+//   Owner:   config/team.json -> owners (or OWNER_EMAILS). Everything an admin can do, plus make or remove admins.
+//            Can't be changed or locked out from the app.
+//   Admin:   made by an owner on the Admin page (or listed in config/team.json -> admins). Uses the Admin page to make
+//            people managers and turn reps' and managers' access off or on. Can't make admins or change other admins.
+//   Manager: config/team.json -> managers (or MANAGER_EMAILS), or made a manager on the Admin page. Sees the Team pages
+//            and everyone's call reports.
 //   Everyone practises the same way.
 
 function emailList(envValue: string | undefined, fallback: string[]): string[] {
@@ -23,27 +26,24 @@ export function isListedManager(email: string | null | undefined): boolean {
   return !!email && emailList(process.env.MANAGER_EMAILS, config.team.managers).includes(email.toLowerCase());
 }
 
-/** Managers by email (config or MANAGER_EMAILS), including admins. Doesn't include people made managers on the Admin page. */
-export function isConfiguredManager(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const e = email.toLowerCase();
-  return isAdminEmail(e) || isListedManager(e);
-}
-
 export interface Access {
+  isOwner: boolean;
   isAdmin: boolean;
   isManager: boolean;
   disabled: boolean;
 }
 
 export async function accessFor(user: Pick<User, "id" | "email"> | null | undefined): Promise<Access> {
-  if (!user) return { isAdmin: false, isManager: false, disabled: false };
-  const isAdmin = isAdminEmail(user.email);
+  if (!user) return { isOwner: false, isAdmin: false, isManager: false, disabled: false };
+  const isOwner = isOwnerEmail(user.email);
+  const fixed = isFixedAdminEmail(user.email);
   const flags = await profileFlags(user.id);
+  const isAdmin = fixed || flags.role === "admin";
   return {
+    isOwner,
     isAdmin,
-    isManager: isAdmin || isConfiguredManager(user.email) || flags.role === "manager",
-    disabled: !isAdmin && flags.disabled, // an admin can never lock themselves out
+    isManager: isAdmin || isListedManager(user.email) || flags.role === "manager",
+    disabled: !fixed && flags.disabled, // owners and admins set by email can never be locked out
   };
 }
 
@@ -64,9 +64,10 @@ export async function requireManager(): Promise<User> {
   return user;
 }
 
-/** For the Admin page and its actions. */
-export async function requireAdmin(): Promise<User> {
+/** For the Admin page and its actions: the signed-in admin (or owner) and what they may do. A 404 for everyone else. */
+export async function requireAdmin(): Promise<{ user: User; access: Access }> {
   const user = await signedInUser();
-  if (!isAdminEmail(user.email)) notFound();
-  return user;
+  const access = await accessFor(user);
+  if (!access.isAdmin || access.disabled) notFound();
+  return { user, access };
 }
