@@ -10,7 +10,7 @@
   "metrics": {
     "cold_call": {
       "talk_share": {
-        "label": "Talk time (you)", "unit": "%", "max": 60, "target": "about 55–60% or less",
+        "label": "Talk time (you)", "unit": "%", "max": 65, "target": "about 55–65% or less",
         "note": "In Gong's data, reps in successful cold calls talk about 55% of the time. A cold call needs more rep talk than discovery, but it should still be a conversation."
       },
       "wpm": {

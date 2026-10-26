@@ -147,7 +147,7 @@ function fluencyResult(
 
 function pointsFor(max: number, grade: Grade): number {
   const g = config.rubric.grade_points[grade];
-  return Math.floor(max * g);
+  return Math.round(max * g); // half of 5 = 3, not 2
 }
 
 const SYSTEM_PROMPT = `You are an experienced, fair and exacting B2B sales coach scoring a practice call between a mutherboard sales rep and an AI-played prospect.
@@ -192,7 +192,16 @@ export async function scoreSession({ session, turns, secrets }: ScoreInput): Pro
     : `Speaking metrics: ${metrics.filler_count} filler words, ${metrics.questions} questions asked (pace is not measurable for this call).`;
 
   const rubricForPrompt = [
-    ...core.criteria.filter((c) => !c.computed_in_code).map((c) => ({ id: c.id, section: "core", name: c.name, max: c.max, question: c.question, full_marks: c.full })),
+    ...core.criteria
+      .filter((c) => !c.computed_in_code)
+      .map((c) => ({
+        id: c.id,
+        section: "core",
+        name: c.name,
+        max: c.max,
+        question: c.question_by_scenario?.[session.scenario] ?? c.question,
+        full_marks: c.full_by_scenario?.[session.scenario] ?? c.full,
+      })),
     ...mod.criteria.map((c) => ({ id: c.id, section: `module: ${mod.label} (${mod.framework})`, name: c.name, max: c.max, question: c.question, full_marks: c.full })),
   ];
 
