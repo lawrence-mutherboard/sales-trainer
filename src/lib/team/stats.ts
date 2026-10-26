@@ -61,6 +61,8 @@ export interface RepSummary {
   weakest: Skill | null;
   fillerPct: number | null;
   talkShare: number | null;
+  /** The talk-time limit for the calls they made (65% on cold calls, 55% on discovery…), averaged, as a %. */
+  talkLimit: number | null;
   wpm: number | null;
 }
 
@@ -204,6 +206,7 @@ export function summarise(person: Person, calls: CallRow[]): RepSummary {
     weakest: skills(scored)[0] ?? null,
     fillerPct: filler == null ? null : Math.round(filler * 10) / 10,
     talkShare: talk == null ? null : Math.round(talk * 100),
+    talkLimit: talked.length ? Math.round((mean(talked.map((c) => c.talk!.limit)) as number) * 100) : null,
     wpm: wpm == null ? null : Math.round(wpm),
   };
 }
