@@ -24,7 +24,7 @@ export function ResetPasswordForm() {
       setBusy(false);
       return;
     }
-    window.location.assign("/setup");
+    window.location.assign("/");
   }
 
   return (
