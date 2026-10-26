@@ -64,7 +64,7 @@ export function AuthForm({ signOutFirst = false }: { signOutFirst?: boolean }) {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
         if (error) throw error;
-        window.location.assign("/setup"); // a full load, so the server sees the new sign-in straight away
+        window.location.assign("/"); // Home. A full load, so the server sees the new sign-in straight away
         return;
       } else if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({

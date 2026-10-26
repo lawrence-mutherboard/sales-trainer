@@ -11,8 +11,8 @@ export async function GET(request: Request) {
   const origin = siteOrigin(request);
 
   // Only allow same-site relative redirects.
-  const nextParam = url.searchParams.get("next") ?? "/setup";
-  const next = nextParam.startsWith("/") && !nextParam.startsWith("//") && !nextParam.startsWith("/\\") ? nextParam : "/setup";
+  const nextParam = url.searchParams.get("next") ?? "/";
+  const next = nextParam.startsWith("/") && !nextParam.startsWith("//") && !nextParam.startsWith("/\\") ? nextParam : "/";
 
   if (!code) return NextResponse.redirect(`${origin}/login?error=auth`);
 
