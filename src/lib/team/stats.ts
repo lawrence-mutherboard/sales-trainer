@@ -84,7 +84,8 @@ export async function loadPeople(): Promise<Person[]> {
   const { data, error } = await supabaseAdmin().from(TABLES.profiles).select("*");
   if (error) console.error("team: could not read profiles", error);
   type Row = { id: string; email: string; name: string | null; role?: string | null; disabled?: boolean | null; created_at: string };
-  return ((data ?? []) as Row[]).map((p) => {
+  const hidden = new Set(config.team.hidden.map((e) => e.toLowerCase()));
+  return ((data ?? []) as Row[]).filter((p) => !hidden.has(p.email.toLowerCase())).map((p) => {
     const isFixedAdmin = isFixedAdminEmail(p.email);
     const isAdmin = isFixedAdmin || p.role === "admin";
     return {
