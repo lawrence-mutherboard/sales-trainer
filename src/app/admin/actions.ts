@@ -54,12 +54,12 @@ export async function setManager(formData: FormData) {
   await saveRole(person, formData.get("manager") === "true" ? "manager" : "rep", user.email);
 }
 
-/** Owners only: make someone an admin, or take admin away (they become a manager). */
+/** Owners only: make someone an admin, or take admin away (they go back to rep; make them a manager again if needed). */
 export async function setAdmin(formData: FormData) {
   const { user, access } = await requireAdmin();
   if (!access.isOwner) redirect("/admin?error=owner-only");
   const person = await target(formData);
-  await saveRole(person, formData.get("admin") === "true" ? "admin" : "manager", user.email);
+  await saveRole(person, formData.get("admin") === "true" ? "admin" : "rep", user.email);
 }
 
 /** Turn someone's access to the trainer off or back on. Only owners can do this to an admin. */
