@@ -14,7 +14,13 @@
         "name": "Clear opener",
         "max": 10,
         "question": "Does the rep introduce themselves and mutherboard, state the reason for the call, and set an agenda?",
-        "full": "Names themselves and mutherboard, gives a specific reason for the call, and proposes what the conversation will cover."
+        "full": "Names themselves and mutherboard, gives a specific reason for the call, and proposes what the conversation will cover.",
+        "question_by_scenario": {
+          "cold_call": "Does the rep introduce themselves and mutherboard, give a specific reason for the call, and ask for a short window or permission to continue? (A formal agenda is NOT expected on a cold call: 'can I have 30 seconds to tell you why I called?' counts as setting expectations.)"
+        },
+        "full_by_scenario": {
+          "cold_call": "Names themselves and mutherboard, gives a specific, relevant reason for calling, and asks for a short window or permission to continue."
+        }
       },
       {
         "id": "core_listening",
@@ -24,7 +30,7 @@
         "full": "Builds on what the prospect just said, asks follow-ups, and never talks over them.",
         "talk_ratio_max": 0.5,
         "talk_ratio_max_by_scenario": {
-          "cold_call": 0.6,
+          "cold_call": 0.65,
           "discovery": 0.55,
           "demo": 0.6
         },
@@ -35,7 +41,13 @@
         "name": "Next steps",
         "max": 5,
         "question": "Does the rep agree a specific next step with a date and involve the right people?",
-        "full": "States the next step, agrees a date and time, and names who else needs to be involved."
+        "full": "States the next step, agrees a date and time, and names who else needs to be involved.",
+        "question_by_scenario": {
+          "cold_call": "Does the rep agree a specific next step with a day and time? (On a cold call a booked meeting with a day and time earns full marks. Asking who else should attend is a bonus, not required.)"
+        },
+        "full_by_scenario": {
+          "cold_call": "Books the meeting with a specific day and time and confirms it back."
+        }
       },
       {
         "id": "core_fluency",

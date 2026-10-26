@@ -209,6 +209,9 @@ const rubric = z.object({
     criteria: z.array(
       criterion.extend({
         talk_ratio_max: z.number().optional(),
+        // A different question / full-marks description for some call types (for example the opener on a cold call).
+        question_by_scenario: z.record(z.string(), z.string()).optional(),
+        full_by_scenario: z.record(z.string(), z.string()).optional(),
         // Criteria judged entirely by code (not sent to the AI). core_fluency uses the filler-word share of the rep's words.
         computed_in_code: z.boolean().optional(),
         filler_pct_full: z.number().optional(),
