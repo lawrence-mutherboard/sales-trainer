@@ -3,23 +3,27 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { TABLES } from "@/lib/db/tables";
 import { daysAgo, loadPeople } from "@/lib/team/stats";
 import { lastSeen } from "@/app/team/ui";
-import { setAccess, setManager } from "./actions";
+import { setAccess, setAdmin, setManager } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 const ERRORS: Record<string, string> = {
   migration:
     "Turning access off needs one small database change first. In Supabase, open the SQL editor and run supabase/migrations/0002_trainer_access.sql, then try again.",
-  admin: "Admins can't be changed here. They are set in config/team.json (or ADMIN_EMAILS on Render).",
+  fixed: "Owners, and admins set in config/team.json, can't be changed here.",
+  "owner-only": "Only an owner can make or remove admins, or change an admin's access.",
+  "migration-admin":
+    "Making admins needs one small database change first. In Supabase, open the SQL editor and run supabase/migrations/0003_trainer_admin_role.sql, then try again.",
   self: "You can't turn off your own access.",
   missing: "That account wasn't found. Refresh the page and try again.",
   save: "That change couldn't be saved. Try again.",
   bad: "Something went wrong with that request.",
 };
 
-// Admins: give or remove manager access, and turn anyone's access to the trainer off or on.
+// Admins: give or remove manager access, and turn reps' and managers' access off or on. Owners can also make admins.
 export default async function AdminPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const me = await requireAdmin();
+  const { user: me, access } = await requireAdmin();
+  const owner = access.isOwner;
   const { error } = await searchParams;
 
   const [people, { data: profileRows }, { data: sessionRows }] = await Promise.all([
@@ -36,14 +40,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     if (!last.has(s.rep_id)) last.set(s.rep_id, s.started_at);
     count.set(s.rep_id, (count.get(s.rep_id) ?? 0) + 1);
   }
-  const sorted = [...people].sort((a, b) => Number(b.isAdmin) - Number(a.isAdmin) || Number(b.isManager) - Number(a.isManager) || a.name.localeCompare(b.name));
+  const sorted = [...people].sort((a, b) => Number(b.isOwner) - Number(a.isOwner) || Number(b.isAdmin) - Number(a.isAdmin) || Number(b.isManager) - Number(a.isManager) || a.name.localeCompare(b.name));
 
   return (
     <div>
       <h1 className="text-2xl font-semibold">Admin</h1>
       <p className="mt-1 text-slate-600">
-        Give people manager access (the Team page and everyone&apos;s call reports), or turn someone&apos;s access to the trainer off. Changes
-        apply within about a minute. This only affects the sales trainer, never anyone&apos;s sign-in for other company apps.
+        Give people manager access (the Team page and everyone&apos;s call reports), or turn someone&apos;s access to the trainer off.
+        {owner ? " As an owner you can also make people admins." : " Only owners can make admins or change an admin."} Changes apply within about a minute. This only affects the sales trainer, never anyone&apos;s sign-in for other company apps.
       </p>
 
       {error && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{ERRORS[error] ?? ERRORS.save}</p>}
@@ -64,7 +68,6 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </thead>
           <tbody className="divide-y divide-slate-100">
             {sorted.map((p) => {
-              const fixedManager = !p.isAdmin && isListedManager(p.email);
               return (
                 <tr key={p.id} className={p.disabled ? "bg-red-50/40" : ""}>
                   <td className="px-4 py-3">
@@ -78,31 +81,59 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                   <td className="px-4 py-3">{lastSeen(daysAgo(last.get(p.id) ?? null))}</td>
 
                   <td className="px-4 py-3">
-                    {p.isAdmin ? (
-                      <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">Admin</span>
-                    ) : fixedManager ? (
-                      <span className="text-xs text-slate-600" title="Set in config/team.json or MANAGER_EMAILS">
-                        Manager (set in config)
+                    {p.isOwner ? (
+                      <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-800">Owner</span>
+                    ) : p.isFixedAdmin ? (
+                      <span className="text-xs text-slate-600" title="Set in config/team.json or ADMIN_EMAILS">
+                        Admin (set in config)
                       </span>
+                    ) : p.isAdmin ? (
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">Admin</span>
+                        {owner && (
+                          <form action={setAdmin}>
+                            <input type="hidden" name="id" value={p.id} />
+                            <input type="hidden" name="admin" value="false" />
+                            <button className="rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">Remove admin</button>
+                          </form>
+                        )}
+                      </div>
                     ) : (
-                      <form action={setManager} className="flex items-center gap-2">
-                        <input type="hidden" name="id" value={p.id} />
-                        <input type="hidden" name="manager" value={p.isManager ? "false" : "true"} />
+                      <div className="flex flex-wrap items-center gap-2">
                         <span
                           className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.isManager ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-700"}`}
                         >
                           {p.isManager ? "Manager" : "Rep"}
                         </span>
-                        <button className="rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">
-                          {p.isManager ? "Remove manager" : "Make manager"}
-                        </button>
-                      </form>
+                        {isListedManager(p.email) ? (
+                          <span className="text-xs text-slate-500" title="Set in config/team.json or MANAGER_EMAILS">
+                            (set in config)
+                          </span>
+                        ) : (
+                          <form action={setManager}>
+                            <input type="hidden" name="id" value={p.id} />
+                            <input type="hidden" name="manager" value={p.isManager ? "false" : "true"} />
+                            <button className="rounded-md border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50">
+                              {p.isManager ? "Remove manager" : "Make manager"}
+                            </button>
+                          </form>
+                        )}
+                        {owner && (
+                          <form action={setAdmin}>
+                            <input type="hidden" name="id" value={p.id} />
+                            <input type="hidden" name="admin" value="true" />
+                            <button className="rounded-md border border-indigo-300 px-2 py-1 text-xs text-indigo-700 hover:bg-indigo-50">Make admin</button>
+                          </form>
+                        )}
+                      </div>
                     )}
                   </td>
 
                   <td className="px-4 py-3">
-                    {p.isAdmin || p.id === me.id ? (
+                    {p.isFixedAdmin || p.id === me.id ? (
                       <span className="text-xs text-slate-500">Always on</span>
+                    ) : p.isAdmin && !owner ? (
+                      <span className="text-xs text-slate-500">{p.disabled ? "Off" : "On"} (only an owner can change)</span>
                     ) : (
                       <form action={setAccess} className="flex items-center gap-2">
                         <input type="hidden" name="id" value={p.id} />

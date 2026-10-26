@@ -1,12 +1,10 @@
 {
-  "_help": "Who can do what. admins: can open the Admin page to give or remove manager access and turn anyone's access to the trainer off or on (admins are always managers too, and can't be changed from the page). managers: always managers. Anyone else can be made a manager on the Admin page. Emails are matched ignoring capitals. On Render, ADMIN_EMAILS and MANAGER_EMAILS (comma-separated) override these lists without a code change. inactive_after_days: when the Team page flags someone as not practising.",
-  "admins": [
+  "_help": "Who can do what. owners: the people with the most power. They can make anyone an admin or remove it, and nobody can change or lock them out from the app (change this list in code, or OWNER_EMAILS on Render). admins: always admins (normally empty; owners make admins on the Admin page instead). Admins can make people managers and turn reps' and managers' access off or on, but can't make admins or change other admins. managers: always managers; anyone else can be made a manager on the Admin page. Emails are matched ignoring capitals; OWNER_EMAILS, ADMIN_EMAILS and MANAGER_EMAILS (comma-separated) on Render override these lists. inactive_after_days: when the Team page flags someone as not practising.",
+  "owners": [
     "lawrence@mutherboard.com",
     "tania@mutherboard.com"
   ],
-  "managers": [
-    "lawrence@mutherboard.com",
-    "tania@mutherboard.com"
-  ],
+  "admins": [],
+  "managers": [],
   "inactive_after_days": 7
 }
